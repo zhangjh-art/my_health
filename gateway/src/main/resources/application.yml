@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: zuul-gateway-backend
+
+server:
+  port: 9000
+  tomcat:
+    #最大连接等待数,默认100
+    accept-count: 1000
+    #最小工作线程数,默认10
+    min-spare-threads: 100
+    #最大工作线程数,默认200
+    max-threads: 1000
+    #请求体最大大小,默认2MB
+    max-swallow-size: -1
+  servlet:
+    encoding:
+      charset: UTF-8
