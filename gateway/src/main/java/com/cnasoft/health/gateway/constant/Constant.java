@@ -1,7 +1,6 @@
 package com.cnasoft.health.gateway.constant;
 
 /**
- * @author cnasoft
  * @date 2020/9/22 19:40
  */
 public interface Constant {
