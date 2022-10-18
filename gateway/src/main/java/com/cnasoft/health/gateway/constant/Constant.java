@@ -1,4 +1,4 @@
-package com.cnasoft.health.gateway.route.constant;
+package com.cnasoft.health.gateway.constant;
 
 /**
  * @author cnasoft

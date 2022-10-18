@@ -1,4 +1,4 @@
-package com.cnasoft.health.gateway.route.provider;
+package com.cnasoft.health.gateway.provider;
 
 import cn.hutool.json.JSONObject;
 import com.netflix.hystrix.exception.HystrixTimeoutException;

@@ -1,4 +1,4 @@
-package com.cnasoft.health.gateway.route.nacos;
+package com.cnasoft.health.gateway.nacos;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
@@ -8,7 +8,7 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.cnasoft.health.gateway.route.AbstractDynamicRouteLocator;
-import com.cnasoft.health.gateway.route.config.ZuulRouteEntity;
+import com.cnasoft.health.gateway.config.ZuulRouteEntity;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.netflix.zuul.RoutesRefreshedEvent;
@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
-import static com.cnasoft.health.gateway.route.constant.Constant.ZUUL_DATA_ID;
-import static com.cnasoft.health.gateway.route.constant.Constant.ZUUL_GROUP_ID;
+import static com.cnasoft.health.gateway.constant.Constant.ZUUL_DATA_ID;
+import static com.cnasoft.health.gateway.constant.Constant.ZUUL_GROUP_ID;
 
 
 /**

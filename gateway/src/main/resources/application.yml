@@ -1,6 +1,17 @@
 spring:
   application:
     name: zuul-gateway-backend
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    database: 0
+    timeout: 2000ms
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        namespace: 18a7bcc0-29d5-4858-b013-438f7b3a9ddb
+        ip: 127.0.0.1
 
 server:
   port: 9000
@@ -67,12 +78,6 @@ zuul:
     api-user:
       path: /api-user/**
       service-id: user-service
-      strip-prefix: true
-      sensitive-headers: '*'
-      custom-sensitive-headers: true
-    api-file:
-      path: /api-file/**
-      service-id: file-service
       strip-prefix: true
       sensitive-headers: '*'
       custom-sensitive-headers: true

@@ -1,4 +1,4 @@
-package com.cnasoft.health.gateway.route.config;
+package com.cnasoft.health.gateway.config;
 
 import lombok.Data;
 import org.springframework.cloud.netflix.zuul.filters.ZuulProperties;
