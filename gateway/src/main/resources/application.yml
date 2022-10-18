@@ -10,8 +10,6 @@ spring:
     nacos:
       discovery:
         server-addr: 127.0.0.1:8848
-        namespace: 18a7bcc0-29d5-4858-b013-438f7b3a9ddb
-        ip: 127.0.0.1
 
 server:
   port: 9000

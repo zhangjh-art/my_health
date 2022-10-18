@@ -37,7 +37,7 @@ import java.util.TreeMap;
 @Slf4j
 public class RequestDeDuplicator {
 
-    @Resource(name = "auth-token-sentinel-string-redis-template")
+    @Resource
     private StringRedisTemplate stringRedisTemplate;
 
     @Value("${request.duplicate.timeout}")
