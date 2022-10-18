@@ -1,4 +1,4 @@
-package com.cnasoft.health.gateway.nacos;
+package com.cnasoft.health.gateway.route.nacos;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
