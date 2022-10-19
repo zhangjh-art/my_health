@@ -42,6 +42,8 @@
         <jedis.version>3.2.0</jedis.version>
 
         <transmittable.version>2.11.4</transmittable.version>
+
+        <mybatis-plus-boot-starter.version>3.3.1</mybatis-plus-boot-starter.version>
     </properties>
 
     <dependencies>
@@ -119,6 +121,12 @@
             <groupId>com.alibaba</groupId>
             <artifactId>transmittable-thread-local</artifactId>
             <version>${transmittable.version}</version>
+        </dependency>
+        <!-- mybatis-plus -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus</artifactId>
+            <version>${mybatis-plus-boot-starter.version}</version>
         </dependency>
     </dependencies>
 

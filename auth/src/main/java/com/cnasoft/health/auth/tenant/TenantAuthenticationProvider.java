@@ -1,6 +1,6 @@
 package com.cnasoft.health.auth.tenant;
 
-import com.cnasoft.health.auth.client.token.TenantUsernamePasswordAuthenticationToken;
+import com.cnasoft.health.common.token.TenantUsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;

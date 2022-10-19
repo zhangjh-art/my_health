@@ -1,6 +1,5 @@
 package com.cnasoft.health.auth.tenant;
 
-import com.cnasoft.health.auth.client.token.TenantUsernamePasswordAuthenticationToken;
 import com.cnasoft.health.common.context.TenantContextHolder;
 import com.cnasoft.health.common.dto.SysUserDTO;
 import com.cnasoft.health.common.token.TenantUsernamePasswordAuthenticationToken;

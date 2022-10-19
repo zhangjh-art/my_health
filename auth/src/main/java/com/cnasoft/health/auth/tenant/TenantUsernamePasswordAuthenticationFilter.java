@@ -1,7 +1,7 @@
 package com.cnasoft.health.auth.tenant;
 
-import com.cnasoft.health.auth.client.token.TenantUsernamePasswordAuthenticationToken;
 import com.cnasoft.health.common.context.TenantContextHolder;
+import com.cnasoft.health.common.token.TenantUsernamePasswordAuthenticationToken;
 import lombok.Setter;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.Authentication;

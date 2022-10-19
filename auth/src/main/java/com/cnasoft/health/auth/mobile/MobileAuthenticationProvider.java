@@ -20,8 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static com.cnasoft.health.user.constant.UserErrorCodeConstants.USER_PASSWORD_ERROR;
-import static com.cnasoft.health.user.constant.UserErrorCodeConstants.USER_SELECTION_ERROR;
+import static com.cnasoft.health.userservice.constant.UserErrorCodeConstants.USER_PASSWORD_ERROR;
+import static com.cnasoft.health.userservice.constant.UserErrorCodeConstants.USER_SELECTION_ERROR;
 
 /**
  * @author cnasoft

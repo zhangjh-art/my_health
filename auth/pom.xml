@@ -21,6 +21,11 @@
             <artifactId>user-service-project</artifactId>
             <version>1.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.cnasoft</groupId>
+            <artifactId>user-manager-service-api</artifactId>
+            <version>1.0</version>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.security.oauth</groupId>

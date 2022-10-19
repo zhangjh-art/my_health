@@ -14,7 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Objects;
 
-import static com.cnasoft.health.user.constant.UserErrorCodeConstants.USER_PASSWORD_ERROR;
+import static com.cnasoft.health.userservice.constant.UserErrorCodeConstants.USER_PASSWORD_ERROR;
 
 /**
  * PAD测试管理员用户名和密码登录-提供者

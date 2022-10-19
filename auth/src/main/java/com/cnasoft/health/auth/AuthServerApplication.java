@@ -3,7 +3,7 @@ package com.cnasoft.health.auth;
 import com.cnasoft.health.auth.annotation.EnableFeignInterceptor;
 import com.cnasoft.health.auth.constant.OauthConstant;
 import com.cnasoft.health.common.rocketmq.ProducerUtil;
-import com.cnasoft.health.user.constant.UserConstant;
+import com.cnasoft.health.userservice.constant.UserConstant;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
