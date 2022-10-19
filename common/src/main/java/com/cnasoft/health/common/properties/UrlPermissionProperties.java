@@ -8,9 +8,6 @@ import java.util.List;
 
 /**
  * url权限配置
- *
- * @author cnasoft
- * @date 2020/7/2 15:51
  */
 @Setter
 @Getter

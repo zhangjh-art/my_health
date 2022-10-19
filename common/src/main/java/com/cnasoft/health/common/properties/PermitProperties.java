@@ -7,8 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author cnasoft
- * @date 2020/6/30 18:29
+ * @function 配置不需要校验的url
  */
 @Setter
 @Getter

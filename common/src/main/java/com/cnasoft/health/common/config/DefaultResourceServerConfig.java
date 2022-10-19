@@ -29,7 +29,6 @@ public class DefaultResourceServerConfig extends ResourceServerConfigurerAdapter
     @Resource
     private TokenStore tokenStore;
 
-
     @Autowired
     private AuthenticationEntryPoint authenticationEntryPoint;
 
@@ -42,9 +41,20 @@ public class DefaultResourceServerConfig extends ResourceServerConfigurerAdapter
     @Autowired
     private SecurityProperties securityProperties;
 
+    /**
+     * 资源安全配置
+     **/
     @Override
     public void configure(ResourceServerSecurityConfigurer resources) throws Exception {
-        resources.stateless(true).tokenStore(tokenStore).authenticationEntryPoint(authenticationEntryPoint).expressionHandler(expressionHandler).accessDeniedHandler(accessDeniedHandler);
+        resources
+            .stateless(true) // 标记以指示在这些资源上仅允许基于令牌的身份验证 默认为true
+            .tokenStore(tokenStore)
+            // 它在用户请求处理过程中遇到认证异常时，被ExceptionTranslationFilter用于开启特定认证方案(authentication schema)的认证流程。
+            .authenticationEntryPoint(authenticationEntryPoint)
+            // 必加的  定义自定义鉴权不加会报错
+            .expressionHandler(expressionHandler)
+            // AccessDenied自定义处理
+            .accessDeniedHandler(accessDeniedHandler);
     }
 
 
@@ -63,18 +73,19 @@ public class DefaultResourceServerConfig extends ResourceServerConfigurerAdapter
      * rememberMe          |   允许通过remember-me登录的用户访问
      * authenticated       |   用户登录后可访问
      *
-     * @param http
-     * @throws Exception
+     * @function 配置某些请求是否可以访问
      */
 
     @Override
     public void configure(HttpSecurity http) throws Exception {
         ExpressionUrlAuthorizationConfigurer<HttpSecurity>.AuthorizedUrl authorizedUrl =
             setHttp(http).authorizeRequests()
+                // 白名单配置的url直接放过
                 .antMatchers(securityProperties.getIgnore().getUrls()).permitAll()
                 .antMatchers(HttpMethod.OPTIONS).permitAll()
                 .anyRequest();
 
+        // 通过规则的url进行自定义校验
         setAuthenticate(authorizedUrl);
 
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED).and().httpBasic().disable().headers().frameOptions().disable().and().csrf().disable();

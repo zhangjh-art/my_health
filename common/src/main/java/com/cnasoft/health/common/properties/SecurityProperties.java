@@ -8,9 +8,6 @@ import org.springframework.stereotype.Component;
 
 /**
  * Spring Security 入口配置
- *
- * @author cnasoft
- * @date 2020/6/30 18:28
  */
 @Setter
 @Getter

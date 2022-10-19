@@ -5,9 +5,6 @@ import lombok.Setter;
 
 /**
  * 验证码配置
- *
- * @author cnasoft
- * @date 2020/7/2 15:56
  */
 @Setter
 @Getter

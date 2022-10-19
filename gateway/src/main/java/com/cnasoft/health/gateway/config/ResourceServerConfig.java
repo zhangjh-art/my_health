@@ -8,6 +8,7 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 
 /**
  * 网关资源服务器配置
+ * 即网关可以看作是资源拥有者 配置资源服务器安全策略，获取token、token校验、token key获取等这些无需身份认证即可访问。
  */
 @Configuration
 @EnableResourceServer
