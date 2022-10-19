@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnasoft.health.userservice.mapper.ApproveMapper">
+
+    <resultMap id="BaseResultMap" type="com.cnasoft.health.userservice.model.Approve">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="approveType" column="approve_type" jdbcType="TINYINT"/>
+        <result property="operation" column="operation" jdbcType="TINYINT"/>
+        <result property="approveStatus" column="approve_status" jdbcType="TINYINT"/>
+        <result property="businessId" column="business_id" jdbcType="BIGINT"/>
+        <result property="approveTime" column="approve_time" jdbcType="TIMESTAMP"/>
+        <result property="approveUserId" column="approve_user_id" jdbcType="BIGINT"/>
+        <result property="approveRemark" column="approve_remark" jdbcType="VARCHAR"/>
+        <result property="beforeString" column="before_string" jdbcType="VARCHAR"/>
+        <result property="afterString" column="after_string" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="createBy" column="create_by" jdbcType="BIGINT"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="updateBy" column="update_by" jdbcType="BIGINT"/>
+        <result property="isDeleted" column="is_deleted" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id
+        ,approve_type,operation,
+        approve_status,business_id,approve_time,
+        approve_user_id,approve_remark,before_string,after_string,
+        create_time,create_by,update_time,
+        update_by
+    </sql>
+
+    <select id="listByParam" resultType="com.cnasoft.health.userservice.model.Approve">
+        select * from approve
+        where is_deleted = 0 and approve_type = #{u.type}
+
+        <trim prefix="and(" suffix=")" suffixOverrides="or">
+            <if test="u.approveId != null and u.approveId != ''">
+                id = #{u.approveId} or
+            </if>
+            <if test="u.businessId != null and u.businessId.size() > 0">
+                business_id in
+                <foreach collection="u.businessId" item="businessId" index="index" open="("
+                         close=")" separator=",">
+                    #{businessId}
+                </foreach>
+            </if>
+        </trim>
+
+        <if test="u.applicantUserId != null and u.applicantUserId != ''">
+            and create_by = #{u.applicantUserId}
+        </if>
+        <if test="u.startTime != null and u.startTime != ''">
+            and DATE_FORMAT(create_time, '%Y-%m-%d %H:%i:%s') <![CDATA[ >= ]]> #{u.startTime, jdbcType=TIMESTAMP}
+        </if>
+        <if test="u.endTime != null and u.endTime != ''">
+            and DATE_FORMAT(create_time, '%Y-%m-%d %H:%i:%s') <![CDATA[ <= ]]> #{u.endTime, jdbcType=TIMESTAMP}
+        </if>
+        <if test="u.approveStatus != null and u.approveStatus > -1 ">
+            and approve_status = #{u.approveStatus}
+        </if>
+        order by id desc
+    </select>
+
+    <select id="getApplicantUserList" resultType="com.cnasoft.health.userservice.feign.dto.ApplicantUserInfoVO">
+        select distinct a.create_by as id, AES_DECRYPT(UNHEX(su.name), #{key}) as name from approve a
+        inner join sys_user su on su.id = a.create_by
+        where su.is_deleted = 0
+        <if test="type != null and type > -1">
+            and a.type = #{type}
+        </if>
+    </select>
+
+    <select id="getApproveList" resultType="com.cnasoft.health.common.dto.ApproveSimpleDTO">
+        select business_id, approve_status, approve_remark
+        from approve
+        where id in
+        (select substring_index(group_concat(id order by id desc), ",", 1) as id
+        from approve
+        where approve_type = #{approveType}
+        group by business_id)
+        and business_id in
+        <foreach collection="businessIds" item="businessId" index="index" open="("
+                 close=")" separator=",">
+            #{businessId}
+        </foreach>
+    </select>
+</mapper>

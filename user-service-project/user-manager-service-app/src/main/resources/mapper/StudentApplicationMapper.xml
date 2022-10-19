@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnasoft.health.userservice.mapper.StudentApplicationMapper">
+    <select id="selectStudentApplicationList"
+            resultType="com.cnasoft.health.userservice.feign.dto.StudentApplicationDto">
+        select id
+        , user_id
+        , application_name
+        , application_img
+        , application_desc
+        , application_url
+        , is_deleted
+        , create_time
+        , create_by
+        , update_time
+        , update_by
+        from student_application
+        <where>
+            user_id=#{userId}
+        </where>
+    </select>
+</mapper>

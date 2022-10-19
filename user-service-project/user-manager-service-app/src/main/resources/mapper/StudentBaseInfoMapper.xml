@@ -1,0 +1,749 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnasoft.health.userservice.mapper.StudentBaseInfoMapper">
+
+    <select id="getTaskUsers" parameterType="com.cnasoft.health.userservice.feign.dto.TaskUserReqVO"
+            resultType="com.cnasoft.health.userservice.feign.dto.TaskUserResVO">
+        select s.user_id, AES_DECRYPT(UNHEX(s.student_number), #{key}) as student_number, s.grade, s.clazz_id,
+        c.clazz_name, s.parent_id from student_base_info s left join clazz c on s.clazz_id = c.id
+        <where>
+            s.is_deleted = 0 and s.school_id = #{query.schoolId}
+            <if test="query.grades != null and query.grades.size() >0">
+                and s.grade in
+                <foreach collection="query.grades" close=")" item="item" open="(" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="query.clazzIds != null and query.clazzIds.size() >0">
+                and c.id in
+                <foreach collection="query.clazzIds" close=")" item="item" open="(" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="query.exceptUserIds != null and query.exceptUserIds.size() >0">
+                and s.user_id not in
+                <foreach collection="query.exceptUserIds" close=")" item="item" open="(" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="query.mixInput != null and query.mixInput != ''">
+                and (LOCATE(#{query.mixInput}, AES_DECRYPT(UNHEX(s.name), #{key})) > 0 or
+                LOCATE(#{query.mixInput}, AES_DECRYPT(UNHEX(s.student_number), #{key})) > 0)
+            </if>
+            <if test="query.parentIds != null and query.parentIds.size() >0">
+                and s.parent_id in
+                <foreach collection="query.parentIds" close=")" item="item" open="(" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        order by user_id desc
+    </select>
+
+    <select id="findIdCardNums" parameterType="java.util.List"
+            resultType="com.cnasoft.health.userservice.model.StudentBaseInfo">
+        select id,AES_DECRYPT(UNHEX(identity_card_number), #{key}) as identity_card_number from student_base_info
+        <where>
+            is_deleted = 0 and school_id = #{schoolId}
+            <if test="list != null and list.size() > 0">
+                and AES_DECRYPT(UNHEX(identity_card_number), #{key}) in
+                <foreach collection="list" close=")" item="item" open="(" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="selectOneByParams" resultType="com.cnasoft.health.userservice.model.StudentBaseInfo">
+        select b.id,b.user_id from student_base_info b
+        <where>
+            <if test="param != null and param.identityCardNumber != null and param.identityCardNumber != ''">
+                and AES_DECRYPT(UNHEX(b.identity_card_number), #{key}) = #{param.identityCardNumber}
+            </if>
+            <if test="param != null and param.schoolId != null">
+                and b.school_id = #{param.schoolId}
+            </if>
+            <if test="param != null and param.userId != null">
+                and b.user_id = #{param.userId}
+            </if>
+        </where>
+        limit 1
+    </select>
+
+    <update id="updateParentIdByIdCardNum" parameterType="java.util.List">
+        update student_base_info
+        <trim prefix="set" suffixOverrides=",">
+            <trim prefix="parent_id =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.parentId != null">
+                        when id=#{item.id} then #{item.parentId}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="relationship =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.relationship != null">
+                        when id=#{item.id} then #{item.relationship}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="update_by =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.updateBy != null">
+                        when id=#{item.id} then #{item.updateBy}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="update_time =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.updateTime != null">
+                        when id=#{item.id} then #{item.updateTime}
+                    </if>
+                </foreach>
+            </trim>
+        </trim>
+        where id in
+        <foreach collection="list" index="index" item="item" separator="," open="(" close=")">
+            #{item.id,jdbcType=BIGINT}
+        </foreach>
+    </update>
+
+    <select id="list" resultType="com.cnasoft.health.userservice.feign.dto.StudentRespVO">
+        select i.id, AES_DECRYPT(UNHEX(i.student_number), #{key}) as student_number, i.grade, c.clazz_name, i.parent_id,
+        i.relationship,
+        AES_DECRYPT(UNHEX(i.name), #{key}) name, AES_DECRYPT(UNHEX(i.username), #{key}) username,i.sex,i.enabled,
+        i.user_id, AES_DECRYPT(UNHEX(p.name), #{key}) as parent_name,AES_DECRYPT(UNHEX(p.mobile), #{key}) as
+        parent_mobile
+        from student_base_info i
+        left join parent p on p.id = i.parent_id
+        left join clazz c on c.id = i.clazz_id
+        <where>
+            i.is_deleted = 0
+            <if test="param.number != null">
+                and (i.id = #{param.number} or LOCATE(#{param.number}, AES_DECRYPT(UNHEX(i.student_number), #{key})) >
+                0)
+            </if>
+            <if test="param.schoolId != null">
+                and i.school_id = #{param.schoolId}
+            </if>
+            <if test="param.text != null and param.text != ''">
+                and (
+                LOCATE(#{param.text}, AES_DECRYPT(UNHEX(i.name), #{key})) > 0 or
+                LOCATE(#{param.text}, AES_DECRYPT(UNHEX(i.student_number), #{key})) > 0)
+            </if>
+            <if test="param.grade != null and param.grade != ''">
+                and i.grade = #{param.grade}
+            </if>
+            <if test="param.clazzId != null and param.clazzId != ''">
+                and i.clazz_id = #{param.clazzId}
+            </if>
+            <if test="param.clazzIds != null and param.clazzIds.size() > 0">
+                and i.clazz_id in
+                <foreach collection="param.clazzIds" item="clazzId" index="index" open="(" close=")" separator=",">
+                    #{clazzId}
+                </foreach>
+            </if>
+            <if test="param.enabled != null">
+                and i.enabled = #{param.enabled}
+            </if>
+            order by i.id desc
+        </where>
+    </select>
+
+    <select id="listCount" resultType="java.lang.Long">
+        select count(1)
+        from student_base_info i
+        <where>
+            i.is_deleted = 0
+            <if test="param.number != null">
+                and (i.id = #{param.number} or LOCATE(#{param.number}, AES_DECRYPT(UNHEX(i.student_number), #{key})) >
+                0)
+            </if>
+            <if test="param.schoolId != null">
+                and i.school_id = #{param.schoolId}
+            </if>
+            <if test="param.text != null and param.text != ''">
+                and (
+                LOCATE(#{param.text}, AES_DECRYPT(UNHEX(i.name), #{key})) > 0 or
+                LOCATE(#{param.text}, AES_DECRYPT(UNHEX(i.student_number), #{key})) > 0)
+            </if>
+            <if test="param.grade != null and param.grade != ''">
+                and i.grade = #{param.grade}
+            </if>
+            <if test="param.clazzId != null and param.clazzId != ''">
+                and i.clazz_id = #{param.clazzId}
+            </if>
+            <if test="param.clazzIds != null and param.clazzIds.size() > 0">
+                and i.clazz_id in
+                <foreach collection="param.clazzIds" item="clazzId" index="index" open="(" close=")" separator=",">
+                    #{clazzId}
+                </foreach>
+            </if>
+            <if test="param.enabled != null">
+                and i.enabled = #{param.enabled}
+            </if>
+        </where>
+    </select>
+
+    <select id="getStudents" parameterType="com.cnasoft.health.userservice.feign.dto.TaskUserReqVO"
+            resultType="com.cnasoft.health.userservice.feign.dto.TaskUserResVO">
+        select AES_DECRYPT(UNHEX(s.name), #{key}) name, s.relationship, parent_id from student_base_info s
+        <where>
+            s.school_id = #{schoolId}
+            <if test="parentIds != null and parentIds.size() >0">
+                and s.parent_id in
+                <foreach collection="parentIds" close=")" item="item" open="(" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        order by user_id desc
+    </select>
+
+    <select id="getById" resultType="com.cnasoft.health.userservice.feign.dto.StudentInfoRespVO">
+        select b.id,
+        AES_DECRYPT(UNHEX(b.name), #{key}) as name,
+        u.nickname,
+        b.sex,
+        AES_DECRYPT(UNHEX(b.used_name), #{key}) as used_name,
+        AES_DECRYPT(UNHEX(b.mobile), #{key}) as mobile,
+        b.email,
+        AES_DECRYPT(UNHEX(b.identity_card_number), #{key}) as identity_card_number,
+        AES_DECRYPT(UNHEX(b.birthday), #{key}) as birthday,
+        b.grade,
+        b.clazz_id,
+        AES_DECRYPT(UNHEX(b.student_number), #{key}) as student_number,
+        AES_DECRYPT(UNHEX(b.student_code), #{key}) as student_code,
+        b.student_status,
+        b.parent_id,
+        b.relationship,
+        a.nation,
+        AES_DECRYPT(UNHEX(a.birth_place), #{key}) as birth_place,
+        AES_DECRYPT(UNHEX(a.native_place), #{key}) as native_place,
+        a.politics_status,
+        a.gatqw,
+        a.illness_history,
+        a.country,
+        a.blood_type,
+        a.healthy_status,
+        a.family_sort,
+        AES_DECRYPT(UNHEX(a.height), #{key}) as height,
+        AES_DECRYPT(UNHEX(a.weight), #{key}) as weight,
+        a.is_only,
+        a.is_orphan,
+        a.is_left,
+        a.disability_type,
+        a.is_child_of_migrant,
+        a.is_child_of_martyr_entitled,
+        a.is_subsidized,
+        a.special_condition
+        from student_base_info b
+        inner join sys_user u on u.id = b.user_id
+        left join student_additional_info a on b.id = a.student_id
+        where b.user_id = #{id}
+        <if test="schoolId != null">
+            and b.school_id = #{schoolId}
+        </if>
+        limit 1
+    </select>
+
+    <select id="getStudent" resultType="com.cnasoft.health.userservice.model.StudentBaseInfo">
+        select b.id, b.user_id, b.parent_id, AES_DECRYPT(UNHEX(b.`name`), #{key}) as `name`,
+        AES_DECRYPT(UNHEX(b.identity_card_number), #{key}) as identity_card_number,
+        AES_DECRYPT(UNHEX(b.birthday), #{key}) as birthday
+        from student_base_info b
+        <where>
+            b.is_deleted = 0 and
+            <foreach collection="students" item="student" separator="or" open="(" close=")">
+                (AES_DECRYPT(UNHEX(b.name), #{key}) = #{student.name}
+                <if test="student.identityCardNumber != null and student.identityCardNumber != ''">
+                    and AES_DECRYPT(UNHEX(b.identity_card_number), #{key}) = #{student.identityCardNumber}
+                </if>
+                )
+            </foreach>
+        </where>
+    </select>
+
+    <resultMap id="studentResultMap" type="com.cnasoft.health.userservice.model.StudentBaseInfo">
+        <id column="id" property="id"></id>
+        <result column="user_id" property="userId"></result>
+        <result column="username" property="username"></result>
+        <result column="student_additional_info_id" property="studentAdditionalInfoId"></result>
+
+        <collection property="studentFamilyConditionIds" javaType="list" ofType="java.lang.Long">
+            <id column="student_family_condition_id"/>
+        </collection>
+    </resultMap>
+    <select id="selectByStudent" resultMap="studentResultMap">
+        select s1.id,s1.user_id,AES_DECRYPT(UNHEX(s1.username), #{key}) as username,
+        s2.id as student_additional_info_id,s3.id as student_family_condition_id
+        from student_base_info s1
+        left join student_additional_info s2 on s2.student_id = s1.id
+        left join student_family_condition s3 on s3.student_id = s1.id
+        <where>
+            s1.is_deleted = 0 and s1.school_id = #{schoolId}
+            <if test="usernames != null and usernames.size() > 0">
+                and AES_DECRYPT(UNHEX(s1.username), #{key}) in
+                <foreach collection="usernames" close=")" item="item" open="(" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <insert id="insertBatch" parameterType="java.util.List" keyColumn="id" keyProperty="list.id"
+            useGeneratedKeys="true">
+        INSERT INTO student_base_info (user_id, username, `name`, mobile, sex, email, enabled, used_name,
+        student_number,
+        student_code, student_status, school_id, grade, clazz_id, admission_year, identity_card_number, parent_id,
+        relationship, birthday, create_by, create_time, update_by, update_time, is_deleted) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.userId},HEX(AES_ENCRYPT(#{item.username}, #{key})),
+            HEX(AES_ENCRYPT(#{item.name}, #{key})),HEX(AES_ENCRYPT(#{item.mobile}, #{key})),
+            #{item.sex},#{item.email},#{item.enabled},HEX(AES_ENCRYPT(#{item.usedName}, #{key})),
+            HEX(AES_ENCRYPT(#{item.studentNumber}, #{key})),HEX(AES_ENCRYPT(#{item.studentCode}, #{key})),
+            #{item.studentStatus},#{item.schoolId},#{item.grade},#{item.clazzId},#{item.admissionYear},
+            HEX(AES_ENCRYPT(#{item.identityCardNumber}, #{key})),#{item.parentId},#{item.relationship},
+            HEX(AES_ENCRYPT(#{item.birthday}, #{key})),#{item.createBy},#{item.createTime},
+            #{item.updateBy},#{item.updateTime},#{item.isDeleted})
+        </foreach>
+    </insert>
+
+    <update id="updateBatch" parameterType="java.util.List">
+        update student_base_info
+        <trim prefix="set" suffixOverrides=",">
+            <trim prefix="user_id =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.userId != null">
+                        when id=#{item.id} then #{item.userId}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="username =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.username != null and item.username != ''">
+                        when id=#{item.id} then HEX(AES_ENCRYPT(#{item.username}, #{key}))
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="name =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.name != null and item.name != ''">
+                        when id=#{item.id} then HEX(AES_ENCRYPT(#{item.name}, #{key}))
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="mobile =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.mobile != null and item.mobile != ''">
+                        when id=#{item.id} then HEX(AES_ENCRYPT(#{item.mobile}, #{key}))
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="sex =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.sex != null">
+                        when id=#{item.id} then #{item.sex}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="email =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.email != null and item.email != ''">
+                        when id=#{item.id} then #{item.email}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="enabled =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.enabled != null">
+                        when id=#{item.id} then #{item.enabled}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="used_name =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.usedName != null and item.usedName != ''">
+                        when id=#{item.id} then HEX(AES_ENCRYPT(#{item.usedName}, #{key}))
+                    </if>
+                    <if test="item.usedName == null or item.usedName == ''">
+                        when id=#{item.id} then null
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="student_number =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.studentNumber != null and item.studentNumber != ''">
+                        when id=#{item.id} then HEX(AES_ENCRYPT(#{item.studentNumber}, #{key}))
+                    </if>
+                    <if test="item.studentNumber == null or item.studentNumber == ''">
+                        when id=#{item.id} then null
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="student_code =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.studentCode != null and item.studentCode != ''">
+                        when id=#{item.id} then HEX(AES_ENCRYPT(#{item.studentCode}, #{key}))
+                    </if>
+                    <if test="item.studentCode == null or item.studentCode == ''">
+                        when id=#{item.id} then null
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="student_status =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.studentStatus != null">
+                        when id=#{item.id} then #{item.studentStatus}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="school_id =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.schoolId != null">
+                        when id=#{item.id} then #{item.schoolId}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="grade =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.grade != null and item.grade != ''">
+                        when id=#{item.id} then #{item.grade}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="clazz_id =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.clazzId != null">
+                        when id=#{item.id} then #{item.clazzId}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="admission_year =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.admissionYear != null">
+                        when id=#{item.id} then #{item.admissionYear}
+                    </if>
+                    <if test="item.admissionYear == null">
+                        when id=#{item.id} then null
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="identity_card_number =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.identityCardNumber != null and item.identityCardNumber != ''">
+                        when id=#{item.id} then HEX(AES_ENCRYPT(#{item.identityCardNumber}, #{key}))
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="parent_id =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.parentId != null">
+                        when id=#{item.id} then #{item.parentId}
+                    </if>
+                    <if test="item.parentId == null">
+                        when id=#{item.id} then null
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="relationship =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.relationship != null">
+                        when id=#{item.id} then #{item.relationship}
+                    </if>
+                    <if test="item.relationship == null">
+                        when id=#{item.id} then null
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="birthday =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.birthday != null">
+                        when id=#{item.id} then HEX(AES_ENCRYPT(#{item.birthday}, #{key}))
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="update_by =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.updateBy != null">
+                        when id=#{item.id} then #{item.updateBy}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="update_time =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.updateTime != null">
+                        when id=#{item.id} then #{item.updateTime}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="is_deleted =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.isDeleted != null">
+                        when id=#{item.id} then #{item.isDeleted}
+                    </if>
+                </foreach>
+            </trim>
+        </trim>
+        where id in
+        <foreach collection="list" index="index" item="item" separator="," open="(" close=")">
+            #{item.id,jdbcType=BIGINT}
+        </foreach>
+    </update>
+
+    <select id="findByUserId" resultType="com.cnasoft.health.userservice.model.StudentBaseInfo">
+        select b.id,
+               b.user_id,
+               AES_DECRYPT(UNHEX(b.name), #{key})                 as name,
+               AES_DECRYPT(UNHEX(u.username), #{key})                username,
+               b.sex,
+               AES_DECRYPT(UNHEX(b.mobile), #{key})               as mobile,
+               b.email,
+               AES_DECRYPT(UNHEX(b.identity_card_number), #{key}) as identity_card_number,
+               b.grade,
+               b.clazz_id,
+               AES_DECRYPT(UNHEX(b.student_number), #{key})       as student_number,
+               AES_DECRYPT(UNHEX(b.student_code), #{key})         as student_code,
+               b.student_status,
+               u.nickname,
+               u.head_img_url
+
+        from student_base_info b
+                 left join sys_user u on b.user_id = u.id
+        where b.user_id = #{userId}
+          and b.school_id = #{schoolId}
+    </select>
+
+    <select id="getStudentIdBySchool" resultType="java.lang.Long">
+        select id
+        from student_base_info
+        where is_deleted = 0
+          and school_id = #{schoolId}
+    </select>
+
+    <select id="getStudentIdByClazz" resultType="java.lang.Long">
+        select id
+        from student_base_info
+        where is_deleted = 0
+          and clazz_id = #{clazzId}
+    </select>
+
+    <select id="getUserIdByClazz" resultType="java.lang.Long">
+        select user_id
+        from student_base_info
+        where is_deleted = 0
+          and clazz_id = #{clazzId}
+    </select>
+    <select id="listBaseInfo" resultType="com.cnasoft.health.userservice.feign.dto.StudentBaseRespVO">
+        select i.id, i.grade, c.clazz_name, i.user_id,i.sex,i.student_status,
+        AES_DECRYPT(UNHEX(i.name), #{key}) name,
+        AES_DECRYPT(UNHEX(i.student_number), #{key}) as student_number,
+        AES_DECRYPT(UNHEX(i.identity_card_number), #{key}) as identity_card_number,
+        AES_DECRYPT(UNHEX(i.student_code), #{key}) as student_code
+        from student_base_info i
+        left join clazz c on c.id = i.clazz_id
+        <where>
+            i.is_deleted = 0
+            <if test="param.schoolId != null">
+                and i.school_id = #{param.schoolId}
+            </if>
+            <if test="param.query != null and param.query != ''">
+                and LOCATE(#{param.query}, AES_DECRYPT(UNHEX(i.name), #{key})) > 0
+            </if>
+            <if test="param.grade != null and param.grade != ''">
+                and i.grade = #{param.grade}
+            </if>
+            <if test="param.clazzId != null and param.clazzId != ''">
+                and i.clazz_id = #{param.clazzId}
+            </if>
+            <if test="param.studentStatus != null and param.studentStatus != ''">
+                and i.student_status = #{param.studentStatus}
+            </if>
+            order by i.id desc
+        </where>
+    </select>
+
+    <update id="updateStudentBaseInfo">
+        update student_base_info
+        set relationship = #{baseInfo.relationship},
+            name         = HEX(AES_ENCRYPT(#{baseInfo.name}, #{key}))
+        where id = #{baseInfo.id,jdbcType=BIGINT}
+    </update>
+
+    <update id="updateCurrentStudentBaseInfo">
+        update student_base_info
+        set email = #{baseInfo.email}
+        where id = #{baseInfo.id}
+    </update>
+
+    <select id="getStudentListByUserIds" resultType="com.cnasoft.health.common.dto.StudentBaseInfoDTO">
+        select b.user_id,AES_DECRYPT(UNHEX(b.name), #{key}) as name,b.sex,
+        d.dict_name as grade_name,c.clazz_name,
+        AES_DECRYPT(UNHEX(b.student_number), #{key}) as student_number,s.name as school_name
+        from student_base_info b
+        inner join sys_dict_data d on d.dict_value = b.grade
+        inner join clazz c on c.id = b.clazz_id
+        inner join school s on s.id = b.school_id
+        where b.user_id in
+        <foreach collection="userIds" close=")" item="userId" open="(" separator=",">
+            #{userId}
+        </foreach>
+    </select>
+
+    <select id="getUserIdsByQuery" resultType="java.lang.Long">
+        select b.user_id from student_base_info b inner join test_manager t on t.school_id = b.school_id
+        where t.user_id = #{params.userId} and (LOCATE(#{params.query}, AES_DECRYPT(UNHEX(b.name), #{key})) > 0 or
+        LOCATE(#{params.query}, AES_DECRYPT(UNHEX(b.student_number), #{key})) > 0)
+        <if test="params.grade != null and params.grade != ''">
+            and b.grade = #{params.grade}
+        </if>
+        <if test="params.clazzId != null">
+            and b.clazz_id = #{params.clazzId}
+        </if>
+    </select>
+
+    <select id="getUserIdsByName" resultType="java.lang.Long">
+        select user_id
+        from student_base_info
+        where LOCATE(#{name}, AES_DECRYPT(UNHEX(name), #{key})) > 0
+    </select>
+
+    <select id="getSelectList" resultType="java.util.Map">
+        select s.user_id id,convert (AES_DECRYPT(UNHEX(s.name), #{key}) using utf8) name,
+        convert (AES_DECRYPT(UNHEX(s.identity_card_number), #{key}) using utf8) identity_card_number,
+        convert (AES_DECRYPT(UNHEX(s.student_number), #{key}) using utf8) student_number
+        from student_base_info s
+        <where>
+            s.is_deleted = 0 and s.school_id = #{schoolId}
+            <if test="userName != null and userName != ''">
+                and AES_DECRYPT(UNHEX(s.name), #{key}) like concat('%',#{userName},'%')
+            </if>
+            <if test="idCard != null and idCard != ''">
+                and AES_DECRYPT(UNHEX(s.identity_card_number), #{key}) like concat('%',#{idCard},'%')
+            </if>
+            <if test="clazzId != null and clazzId != ''">
+                and s.clazz_id = #{clazzId}
+            </if>
+            <if test="studentNumber != null and studentNumber != ''">
+                and AES_DECRYPT(UNHEX(s.student_number), #{key}) like concat('%',#{studentNumber},'%')
+            </if>
+        </where>
+    </select>
+    <select id="getStudentListByUserId" resultType="com.cnasoft.health.common.dto.StudentBaseInfoDTO">
+        select b.user_id,
+               AES_DECRYPT(UNHEX(b.name), #{key})           as name,
+               b.sex,
+               d.dict_name                                  as grade_name,
+               c.clazz_name,
+               AES_DECRYPT(UNHEX(b.student_number), #{key}) as student_number,
+               s.name                                       as school_name
+        from student_base_info b
+                 inner join sys_dict_data d on d.dict_value = b.grade
+                 inner join clazz c on c.id = b.clazz_id
+                 inner join school s on s.id = b.school_id
+        where b.user_id = #{userId}
+    </select>
+
+    <select id="getStudentUserIdByParams" resultType="java.lang.Long">
+        select user_id
+        from student_base_info
+        <where>
+            is_deleted = 0
+            <if test="params.schoolId != null and params.schoolId > -1">
+                and school_id = #{params.schoolId}
+            </if>
+            <if test="params.schoolIds != null and params.schoolIds.size() > 0">
+                and school_id in
+                <foreach collection="params.schoolIds" item="schoolId" index="index" open="(" close=")" separator=",">
+                    #{schoolId}
+                </foreach>
+            </if>
+            <if test="params.clazzIds != null and params.clazzIds.size() > 0">
+                and clazz_id in
+                <foreach collection="params.clazzIds" item="classId" index="index" open="(" close=")" separator=",">
+                    #{classId}
+                </foreach>
+            </if>
+            <if test="params.name != null and params.name != ''">
+                and LOCATE(#{params.name},AES_DECRYPT(UNHEX(name),#{key})) > 0
+            </if>
+            <if test="params.nameAndID != null and params.nameAndID != ''">
+                and (LOCATE(#{params.nameAndID},AES_DECRYPT(UNHEX(name),#{key})) > 0 or
+                LOCATE(#{params.nameAndID},AES_DECRYPT(UNHEX(identity_card_number),#{key})) > 0)
+            </if>
+        </where>
+    </select>
+
+    <select id="getStudentUserIdClazzIdBySchoolAndClass" resultType="com.cnasoft.health.common.vo.UserClazzVO">
+        select user_id,clazz_id from student_base_info
+        <where>
+            is_deleted = 0
+            <if test="schoolId != null and schoolId > -1">
+                and school_id = #{schoolId}
+            </if>
+            <if test="clazzIds != null and clazzIds.size() > 0">
+                and clazz_id in
+                <foreach collection="clazzIds" item="classId" index="index" open="(" close=")" separator=",">
+                    #{classId}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="findStudentListByIds" resultType="com.cnasoft.health.common.dto.StudentDTO">
+        select sbi.user_id as userId,
+        AES_DECRYPT(UNHEX(sbi.name), #{key}) as name,
+        AES_DECRYPT(UNHEX(sbi.mobile), #{key}) as mobile,
+        sbi.sex as sex,
+        sbi.school_id as schoolId,
+        s.name as schoolName,
+        AES_DECRYPT(UNHEX(sbi.student_number), #{key}) as studentNumber,
+        sbi.grade as grade,
+        sdd.dict_name as gradeName,
+        sbi.clazz_id as clazzId,
+        c.clazz_name as clazzName,
+        sbi.parent_id as parentId
+        from student_base_info sbi
+        inner join school s on s.id = sbi.school_id
+        inner join sys_dict_data sdd on sdd.dict_value = sbi.grade
+        inner join clazz c on c.id = sbi.clazz_id
+        where sbi.user_id in
+        <foreach collection="userIds" item="userId" index="index" open="(" close=")" separator=",">
+            #{userId}
+        </foreach>
+    </select>
+
+    <select id="findStudentGradeAndIDNumber" resultType="com.cnasoft.health.common.dto.StudentDTO">
+        select AES_DECRYPT(UNHEX(sbi.identity_card_number), #{key}) as identityCardNumber, sdd.dict_name as gradeName
+        from student_base_info sbi
+                 inner join sys_dict_data sdd on sdd.dict_value = sbi.grade
+        where sbi.user_id = #{userId} limit 1
+    </select>
+
+    <select id="findStudentInfo" resultType="com.cnasoft.health.common.dto.StudentDTO">
+        select sbi.user_id                                    as userId,
+               sbi.school_id                                  as schoolId,
+               AES_DECRYPT(UNHEX(sbi.student_number), #{key}) as studentNumber,
+               sbi.grade                                      as grade,
+               sdd.dict_name                                  as gradeName,
+               sbi.clazz_id                                   as clazzId,
+               c.clazz_name                                   as clazzName,
+               sbi.parent_id                                  as parentId
+        from student_base_info sbi
+                 inner join sys_dict_data sdd on sdd.dict_value = sbi.grade
+                 inner join clazz c on c.id = sbi.clazz_id
+        where sbi.user_id = #{userId}
+          and sbi.is_deleted = 0 limit 1
+    </select>
+
+    <select id="findStudentUserIdByParentUserId" resultType="java.lang.Long">
+        select distinct t.user_id
+        from student_base_info t
+                 inner join parent p on p.id = t.parent_id
+        where p.user_id = #{userId}
+          and p.is_deleted = 0
+          and t.is_deleted = 0
+    </select>
+</mapper>

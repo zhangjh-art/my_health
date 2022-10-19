@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnasoft.health.userservice.mapper.SysUserAuthorityMapper">
+
+    <select id="findAuthoritiesByUserId" resultType="com.cnasoft.health.userservice.model.SysAuthority">
+        select a.*,ua.is_owned from sys_authority a
+        inner join sys_user_authority ua on a.id = ua.authority_id
+        <where>
+            <if test="userId != null">
+                ua.user_id = #{userId}
+            </if>
+        </where>
+    </select>
+
+    <select id="findAuthorities" resultType="com.cnasoft.health.userservice.model.SysAuthority">
+        select a.*,ua.user_id,ua.is_owned from sys_authority a
+        inner join sys_user_authority ua on a.id = ua.authority_id
+        <where>
+            <if test="userIds != null and userIds.size() > 0">
+                and ua.user_id in
+                <foreach collection="userIds"  item="userId" open="(" close=")" separator=",">
+                    #{userId}
+                </foreach>
+            </if>
+        </where>
+    </select>
+</mapper>

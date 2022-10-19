@@ -1,0 +1,513 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnasoft.health.userservice.mapper.ParentMapper">
+
+    <sql id="Base_Column_List">
+        p.id,p.user_id,AES_DECRYPT(UNHEX(p.username), #{key}) as username,
+        AES_DECRYPT(UNHEX(p.name), #{key}) as `name`,AES_DECRYPT(UNHEX(p.mobile), #{key}) mobile,
+        p.sex,p.email,p.school_id,p.enabled,p.confirmed,p.is_active,p.create_time,p.create_by,
+        p.update_time,p.update_by,p.is_deleted
+    </sql>
+
+    <select id="selectOneByParams" resultType="com.cnasoft.health.userservice.model.Parent">
+        select
+        <include refid="Base_Column_List"/>
+        from parent p
+        <where>
+            is_deleted = 0
+            <if test="params.id != null">
+                and p.id = #{params.id}
+            </if>
+            <if test="params.userId != null">
+                and p.user_id = #{params.userId}
+            </if>
+            <if test="params.schoolId != null">
+                and p.school_id = #{params.schoolId}
+            </if>
+        </where>
+        limit 1
+    </select>
+
+    <resultMap id="taskUserResultMap" type="com.cnasoft.health.userservice.feign.dto.TaskUserResVO">
+        <id column="id" property="id"></id>
+        <result column="user_id" property="userId"></result>
+        <result column="name" property="name"></result>
+        <result column="mobile" property="mobile"></result>
+
+        <collection property="students" javaType="list" ofType="com.cnasoft.health.userservice.feign.dto.TaskUserResVO">
+            <id column="student_user_id" property="userId"></id>
+            <result column="student_name" property="name"></result>
+            <result column="student_number" property="studentNumber"></result>
+            <result column="student_sex" property="sex"></result>
+            <result column="grade_name" property="gradeName"></result>
+            <result column="clazz_name" property="clazzName"></result>
+        </collection>
+    </resultMap>
+    <select id="getTaskUsers" resultMap="taskUserResultMap">
+        select p.id,p.user_id,AES_DECRYPT(UNHEX(p.name), #{key}) as name,AES_DECRYPT(UNHEX(p.mobile), #{key}) as mobile,
+        b.user_id as student_user_id,AES_DECRYPT(UNHEX(b.name), #{key}) as student_name,
+        AES_DECRYPT(UNHEX(b.student_number), #{key}) as student_number,
+        b.sex as student_sex,b.grade as grade_name,c.clazz_name
+        from parent p inner join student_base_info b on b.parent_id = p.id
+        inner join clazz c on c.id = b.clazz_id
+        where p.is_deleted = 0 and b.is_deleted = 0 and c.is_deleted = 0
+        and p.school_id = #{query.schoolId}
+        <if test="query.grades != null and query.grades.size() >0">
+            and b.grade in
+            <foreach collection="query.grades" close=")" item="item" open="(" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="query.clazzIds != null and query.clazzIds.size() >0">
+            and b.clazz_id in
+            <foreach collection="query.clazzIds" close=")" item="item" open="(" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="query.mixInput != null and query.mixInput != ''">
+            and (LOCATE(#{query.mixInput}, AES_DECRYPT(UNHEX(b.student_number), #{key})) > 0 or
+            LOCATE(#{query.mixInput}, AES_DECRYPT(UNHEX(b.name), #{key})) > 0)
+        </if>
+    </select>
+
+    <insert id="insertBatch" parameterType="java.util.List" keyColumn="id" keyProperty="list.id"
+            useGeneratedKeys="true">
+        INSERT INTO `parent` (user_id,username,`name`,mobile,sex,email,school_id,enabled,is_active,
+        confirmed,create_by,create_time, update_by,update_time, is_deleted)
+        VALUES
+        <foreach collection="list" index="index" item="item" separator=",">
+            (#{item.userId},HEX(AES_ENCRYPT(#{item.username},#{key})),
+            HEX(AES_ENCRYPT(#{item.name}, #{key})),HEX(AES_ENCRYPT(#{item.mobile}, #{key})),#{item.sex},#{item.email},
+            #{item.schoolId},#{item.enabled},#{item.isActive},#{item.confirmed},#{item.createBy},
+            #{item.createTime},#{item.updateBy},#{item.updateTime},#{item.isDeleted})
+        </foreach>
+    </insert>
+
+    <update id="updateBatch" parameterType="java.util.List">
+        update parent
+        <trim prefix="set" suffixOverrides=",">
+            <trim prefix="user_id =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.userId != null">
+                        when id=#{item.id} then #{item.userId}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="username =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.username != null and item.username != ''">
+                        when id=#{item.id} then HEX(AES_ENCRYPT(#{item.username}, #{key}))
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="name =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.name != null and item.name != ''">
+                        when id=#{item.id} then HEX(AES_ENCRYPT(#{item.name}, #{key}))
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="mobile =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.mobile != null and item.mobile != ''">
+                        when id=#{item.id} then HEX(AES_ENCRYPT(#{item.mobile}, #{key}))
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="sex =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.sex != null">
+                        when id=#{item.id} then #{item.sex}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="email =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.email != null and item.email != ''">
+                        when id=#{item.id} then #{item.email}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="school_id =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.schoolId != null">
+                        when id=#{item.id} then #{item.schoolId}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="enabled =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.enabled != null">
+                        when id=#{item.id} then #{item.enabled}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="is_active =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.isActive != null">
+                        when id=#{item.id} then #{item.isActive}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="confirmed =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.confirmed != null">
+                        when id=#{item.id} then #{item.confirmed}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="update_by =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.updateBy != null">
+                        when id=#{item.id} then #{item.updateBy}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="update_time =case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    <if test="item.updateTime != null">
+                        when id=#{item.id} then #{item.updateTime}
+                    </if>
+                </foreach>
+            </trim>
+        </trim>
+        where id in
+        <foreach collection="list" index="index" item="item" separator="," open="(" close=")">
+            #{item.id,jdbcType=BIGINT}
+        </foreach>
+    </update>
+
+    <select id="selectByParent" resultType="com.cnasoft.health.userservice.model.Parent">
+        select p.id,p.user_id,AES_DECRYPT(UNHEX(p.username), #{key}) username from parent p
+        <where>
+            p.is_deleted = 0 and p.school_id = #{schoolId}
+            <if test="usernames != null and usernames.size() > 0">
+                and AES_DECRYPT(UNHEX(p.username), #{key}) in
+                <foreach collection="usernames" close=")" item="username" open="(" separator=",">
+                    #{username}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <resultMap id="parentResultMap" type="com.cnasoft.health.userservice.feign.dto.ParentRespVO">
+        <id column="id" property="id"></id>
+        <result column="user_id" property="userId"></result>
+        <result column="name" property="name"></result>
+        <result column="sex" property="sex"></result>
+        <result column="email" property="email"></result>
+        <result column="is_active" property="isActive"></result>
+        <result column="enabled" property="enabled"></result>
+        <result column="mobile" property="mobile"></result>
+
+        <collection property="students" javaType="list" ofType="com.cnasoft.health.userservice.feign.dto.StudentRespVO">
+            <id column="student_user_id" property="userId"></id>
+            <result column="student_name" property="name"></result>
+            <result column="student_sex" property="sex"></result>
+            <result column="clazz_name" property="clazzName"></result>
+            <result column="grade" property="grade"></result>
+            <result column="relationship" property="relationship"></result>
+            <result column="identity_card_number" property="identityCardNumber"></result>
+            <result column="is_deleted" property="isDeleted"/>
+            <result column="clazz_deleted" property="clazzDeleted"/>
+        </collection>
+    </resultMap>
+    <select id="pageList" resultMap="parentResultMap">
+        select p.id, p.user_id, AES_DECRYPT(UNHEX(p.name), #{key}) name, p.sex, p.email,
+        p.is_active, p.enabled,AES_DECRYPT(UNHEX(p.mobile), #{key}) as mobile,
+        b.user_id as student_user_id,AES_DECRYPT(UNHEX(b.name), #{key}) as student_name,
+        b.sex as student_sex,c.clazz_name,c.is_deleted as clazz_deleted,b.grade,b.relationship,
+        AES_DECRYPT(UNHEX(b.identity_card_number), #{key}) as identity_card_number,b.is_deleted
+        from parent p
+        left join student_base_info b on b.parent_id = p.id
+        left join clazz c on c.id = b.clazz_id
+        <where>
+            p.is_deleted = 0 and p.school_id = #{params.schoolId}
+            <if test="params.query != null and params.query != ''">
+                and (LOCATE(#{params.query}, AES_DECRYPT(UNHEX(p.name), #{key})) > 0
+                or LOCATE(#{params.query}, AES_DECRYPT(UNHEX(b.name), #{key})) > 0)
+            </if>
+            <if test="params.mobile != null and params.mobile != ''">
+                and p.mobile = HEX(AES_ENCRYPT(#{params.mobile}, #{key}))
+            </if>
+            <if test="params.clazzIds != null and params.clazzIds.size() > 0">
+                and (b.clazz_id in
+                <foreach collection="params.clazzIds" item="clazzId" index="index" open="(" close=")" separator=",">
+                    #{clazzId}
+                </foreach>
+                or p.create_by = #{params.createBy}
+                )
+            </if>
+            <if test="params.grade != null and params.grade != ''">
+                and b.grade = #{params.grade}
+            </if>
+            <if test="params.clazzId != null and params.clazzId != ''">
+                and b.clazz_id = #{params.clazzId}
+            </if>
+            <if test="params.enabled != null">
+                and p.enabled = #{params.enabled}
+            </if>
+            <if test="params.isActive != null">
+                and p.is_active = #{params.isActive}
+            </if>
+        </where>
+        order by p.id desc
+    </select>
+
+    <select id="pageListCount" resultType="java.lang.Long">
+        select count(1)
+        from parent p
+        <if test="(params.studentInput != null and params.studentInput != '') || (params.clazzIds != null and params.clazzIds.size() > 0)">
+            left join student_base_info b on b.parent_id = p.id
+        </if>
+        <where>
+            p.is_deleted = 0 and p.school_id = #{params.schoolId}
+            <if test="params.studentInput != null and params.studentInput != ''">
+                and LOCATE(#{params.studentInput}, AES_DECRYPT(UNHEX(b.name), #{key})) > 0
+            </if>
+            <if test="params.parentInput != null and params.parentInput != ''">
+                and (LOCATE(#{params.parentInput}, AES_DECRYPT(UNHEX(p.name), #{key})) > 0
+                or AES_DECRYPT(UNHEX(p.mobile), #{key}) = #{params.parentInput}
+                or LOCATE(#{params.parentInput}, p.id) > 0)
+            </if>
+            <if test="params.clazzIds != null and params.clazzIds.size() > 0">
+                and (b.clazz_id in
+                <foreach collection="params.clazzIds" item="clazzId" index="index" open="(" close=")" separator=",">
+                    #{clazzId}
+                </foreach>
+                or p.create_by = #{params.createBy}
+                )
+            </if>
+            <if test="params.enabled != null">
+                and p.enabled = #{params.enabled}
+            </if>
+            <if test="params.isActive != null">
+                and p.is_active = #{params.isActive}
+            </if>
+        </where>
+    </select>
+
+    <select id="findByMobile" resultType="com.cnasoft.health.userservice.model.Parent">
+        select <include refid="Base_Column_List"></include> from parent p
+        <where>
+            p.is_deleted = 0
+            <if test="schoolId != null">
+                and school_id = #{schoolId}
+            </if>
+            <if test="mobile != null and mobile != ''">
+                and AES_DECRYPT(UNHEX(p.mobile), #{key}) = #{mobile}
+            </if>
+        </where>
+        limit 1
+    </select>
+
+    <resultMap id="parentStudentsResultMap" type="com.cnasoft.health.userservice.feign.dto.ParentRespVO">
+        <id column="id" property="id"></id>
+        <result column="name" property="name"></result>
+        <result column="sex" property="sex"></result>
+        <result column="mobile" property="mobile"></result>
+        <collection property="students" javaType="list" ofType="com.cnasoft.health.userservice.feign.dto.StudentRespVO">
+            <id property="id" column="studentId"></id>
+            <result column="identity_card_number" property="identityCardNumber"></result>
+            <result column="relationship" property="relationship"></result>
+            <result column="is_deleted" property="isDeleted"/>
+        </collection>
+    </resultMap>
+    <select id="findInfo" resultMap="parentStudentsResultMap">
+        select p.id,
+               AES_DECRYPT(UNHEX(p.name), #{key})                 as name,
+               p.sex,
+               AES_DECRYPT(UNHEX(p.mobile), #{key})               as mobile,
+               b.relationship,
+               b.id                                               as studentId,
+               AES_DECRYPT(UNHEX(b.identity_card_number), #{key}) as identity_card_number,
+               b.is_deleted
+        from parent p
+                 left join student_base_info b on p.id = b.parent_id
+        where p.is_deleted = 0
+          and p.user_id = #{userId}
+          and p.school_id = #{schoolId}
+    </select>
+
+    <resultMap id="parentStudentsResultDetailMap" type="com.cnasoft.health.userservice.feign.dto.ParentRespVO">
+        <id column="id" property="id"/>
+        <id column="user_id" property="userId"/>
+        <result column="name" property="name"/>
+        <result column="sex" property="sex"/>
+        <result column="mobile" property="mobile"/>
+        <collection property="students" javaType="list" ofType="com.cnasoft.health.userservice.feign.dto.StudentRespVO">
+            <id property="id" column="studentId"/>
+            <result column="s_user_id" property="userId"/>
+            <result column="identity_card_number" property="identityCardNumber"/>
+            <result column="relationship" property="relationship"/>
+            <result column="s_name" property="name"/>
+            <result column="clazz_id" property="clazzId"/>
+            <result column="clazz_name" property="clazzName"/>
+            <result column="b_sex" property="sex"/>
+        </collection>
+    </resultMap>
+    <select id="findInfoByUserId" resultMap="parentStudentsResultDetailMap">
+        select p.id,p.user_id,
+        AES_DECRYPT(UNHEX(p.name), #{key}) as name,
+        p.sex,AES_DECRYPT(UNHEX(p.mobile), #{key}) as mobile,
+        b.relationship,b.id as studentId,
+        AES_DECRYPT(UNHEX(b.identity_card_number), #{key}) as identity_card_number,
+        AES_DECRYPT(UNHEX(b.name), #{key}) as s_name,b.user_id as s_user_id,
+        b.clazz_id,c.clazz_name,b.sex as b_sex
+        from parent p
+        left join student_base_info b on p.id = b.parent_id and b.is_deleted = 0
+        left join clazz c on c.id = b.clazz_id and c.is_deleted = 0
+        where p.is_deleted = 0 and p.user_id = #{userId}
+        <if test="schoolId != null">
+            and p.school_id = #{schoolId}
+        </if>
+    </select>
+
+    <select id="getChildrenUserId" resultType="java.lang.Long">
+        select b.user_id
+        from student_base_info b
+        where b.is_deleted = 0
+          and b.parent_id = #{id}
+    </select>
+
+    <select id="getChildrenSchoolId" resultType="java.lang.Long">
+        select b.school_id
+        from student_base_info b
+                 inner join parent p on p.id = b.parent_id
+        where b.is_deleted = 0
+          and p.is_deleted = 0
+          and p.user_id = #{userId}
+    </select>
+
+    <select id="getConfirmAndActive" resultType="java.util.Map">
+        select user_id as id,is_active as active,confirmed from parent
+        where is_deleted = 0 and user_id in
+        <foreach collection="userIds" separator="," close=")" open="(" index="index" item="userId">
+            #{userId}
+        </foreach>
+    </select>
+
+    <select id="getSelectList" resultType="java.util.Map">
+        select p.user_id id,convert (AES_DECRYPT(UNHEX(p.name), #{key}) using utf8) name
+        from parent p
+        <where>
+            p.is_deleted = 0 and p.school_id = #{schoolId}
+            <if test="userName != null and userName != ''">
+                and AES_DECRYPT(UNHEX(p.name), #{key}) like concat('%',#{userName},'%')
+            </if>
+        </where>
+    </select>
+
+    <resultMap id="parentBaseInfoMap" type="com.cnasoft.health.userservice.feign.dto.ParentBaseRespVO">
+        <id column="id" property="id"/>
+        <id column="user_id" property="userId"/>
+        <result column="name" property="name"/>
+        <result column="sex" property="sex"/>
+        <result column="mobile" property="mobile"/>
+        <collection property="studentInfos" javaType="list"
+                    ofType="com.cnasoft.health.userservice.feign.dto.StudentBaseRespVO">
+            <id property="id" column="studentId"/>
+            <result column="s_user_id" property="userId"/>
+            <result column="s_name" property="name"/>
+            <result column="clazz_id" property="clazzId"/>
+            <result column="clazz_name" property="clazzName"/>
+            <result column="grade" property="grade"/>
+        </collection>
+    </resultMap>
+    <select id="listBaseInfo" resultMap="parentBaseInfoMap">
+        select p.id,p.user_id,
+        AES_DECRYPT(UNHEX(p.name), #{key}) as name,
+        p.sex,AES_DECRYPT(UNHEX(p.mobile), #{key}) as mobile,
+        b.id as studentId,
+        AES_DECRYPT(UNHEX(b.name), #{key}) as s_name,b.user_id as s_user_id,
+        b.clazz_id,c.clazz_name,b.grade
+        from parent p
+        left join student_base_info b on p.id = b.parent_id and b.is_deleted = 0
+        left join clazz c on c.id = b.clazz_id and c.is_deleted = 0
+        where p.is_deleted = 0
+        <if test="param.schoolId != null">
+            and p.school_id = #{param.schoolId}
+        </if>
+        <if test="param.query != null and param.query != ''">
+            and LOCATE(#{param.query}, AES_DECRYPT(UNHEX(p.name), #{key})) > 0
+        </if>
+        <if test="param.grade != null and param.grade != ''">
+            and b.grade = #{param.grade}
+        </if>
+        <if test="param.clazzId != null and param.clazzId != ''">
+            and b.clazz_id = #{param.clazzId}
+        </if>
+    </select>
+
+    <select id="getParentUserIdByParams" resultType="java.lang.Long">
+        select distinct p.user_id from parent p inner join student_base_info sbi on sbi.parent_id = p.id
+        <where>
+            sbi.is_deleted = 0 and p.is_deleted = 0
+            <if test="params.schoolId != null and params.schoolId > -1">
+                and sbi.school_id = #{params.schoolId}
+            </if>
+            <if test="params.clazzIds != null and params.clazzIds.size() > 0">
+                and sbi.clazz_id in
+                <foreach collection="params.clazzIds" item="classId" index="index" open="(" close=")" separator=",">
+                    #{classId}
+                </foreach>
+            </if>
+            <if test="params.name != null and params.name != ''">
+                and LOCATE(#{params.name},AES_DECRYPT(UNHEX(p.name),#{key})) > 0
+            </if>
+        </where>
+    </select>
+
+    <resultMap id="parent" type="com.cnasoft.health.common.dto.ParentStudentDTO">
+        <id column="userId" property="userId"/>
+        <result column="schoolId" property="schoolId"/>
+        <result column="confirmed" property="confirmed"/>
+        <collection property="studentNames" javaType="list" ofType="com.cnasoft.health.common.dto.StudentClazzDTO">
+            <id column="studentName" property="name"/>
+            <result property="clazzName" column="clazz_name"/>
+            <result property="grade" column="grade"/>
+        </collection>
+    </resultMap>
+    <select id="findParentInfo" resultMap="parent">
+        select p.user_id                            as userId,
+               p.school_id                          as schoolId,
+               p.confirmed                          as confirmed,
+               AES_DECRYPT(UNHEX(sbi.name), #{key}) as studentName,
+               sbi.grade,
+               c.clazz_name
+        from parent p
+                 left join student_base_info sbi on sbi.parent_id = p.id
+                 left join clazz c on c.id = sbi.clazz_id
+        where p.is_deleted = 0
+          and p.user_id = #{userId}
+    </select>
+
+    <resultMap id="parentList" type="com.cnasoft.health.common.dto.ParentDTO">
+        <id column="userId" property="userId"/>
+        <result column="name" property="name"/>
+        <result column="mobile" property="mobile"/>
+        <result column="sex" property="sex"/>
+        <result column="schoolId" property="schoolId"/>
+        <result column="confirmed" property="confirmed"/>
+        <collection property="studentNames" javaType="list" ofType="java.lang.String">
+            <id column="studentName"/>
+        </collection>
+    </resultMap>
+    <select id="findParentList" resultMap="parentList">
+        select p.user_id as userId,
+        AES_DECRYPT(UNHEX(p.name), #{key}) as name,
+        AES_DECRYPT(UNHEX(p.mobile), #{key}) as mobile,
+        p.sex as sex,
+        p.school_id as schoolId,
+        p.confirmed as confirmed,
+        AES_DECRYPT(UNHEX(sbi.name), #{key}) as studentName
+        from parent p
+        left join student_base_info sbi on sbi.parent_id = p.id
+        where p.user_id in
+        <foreach collection="userIds" item="userId" index="index" open="(" close=")" separator=",">
+            #{userId}
+        </foreach>
+    </select>
+</mapper>

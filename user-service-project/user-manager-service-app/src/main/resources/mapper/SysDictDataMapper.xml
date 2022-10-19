@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnasoft.health.userservice.mapper.SysDictDataMapper">
+
+    <select id="findList" parameterType="com.cnasoft.health.userservice.feign.dto.DictNameReqVO"
+            resultType="com.cnasoft.health.userservice.model.SysDictData">
+        select s.id,s.dict_type,s.dict_value,s.dict_name,s.dict_desc,s.sort,s.disable,s.preset,
+        s.create_time,IFNULL(a.approve_status,s.approve_status) as approve_status,
+        a.approve_remark as remark
+        from sys_dict_data s
+        left join (
+        select business_id,approve_status,approve_remark from approve where id in
+        (select substring_index(group_concat(id order by id desc),",",1) as id from approve
+        where approve_type = ${@com.cnasoft.health.common.enums.ApproveType@DEPARTMENT.code} group by business_id)
+        ) a on a.business_id = s.id
+        <where>
+            s.is_deleted = 0
+            <if test="query.dictType != null and query.dictType != ''">
+                and s.dict_type = #{query.dictType}
+            </if>
+            <if test="query.dictName != null and query.dictName != ''">
+                and s.dict_name like concat(#{query.dictName}, "%")
+            </if>
+            <if test="query.disable != null">
+                and s.disable = #{query.disable}
+            </if>
+            <if test="query.approveStatus != null and query.approveStatus > -1">
+                and a.approve_status = #{query.approveStatus}
+            </if>
+            <if test="query.startCreateTime != null">
+                and s.create_time >= #{query.startCreateTime}
+            </if>
+            <if test="query.endCreateTime != null">
+                and s.create_time <![CDATA[<=]]> #{query.endCreateTime}
+            </if>
+        </where>
+        order by s.id desc
+    </select>
+
+    <select id="getDictDateIdByQuery" resultType="java.lang.Long">
+        select distinct d.id from
+        sys_dict_data d
+        INNER JOIN approve on approve.approve_type = 5 and approve.business_id = d.id
+        <where>
+            <if test="dictType != null and dictType != ''">
+                and d.dict_type = #{dictType}
+            </if>
+            <if test="dictName != null and dictName != ''">
+                and d.dict_name like concat('%',#{dictName}, '%')
+            </if>
+        </where>
+    </select>
+
+    <update id="updateApproveStatus">
+        update sys_dict_data set approve_status = #{approveStatus}
+        <where>
+            approve_status <![CDATA[ <> ]]> 1 and id in
+            <foreach collection="dictDataIds" index="index" item="dictDataId" open="(" close=")" separator=",">
+                #{dictDataId}
+            </foreach>
+        </where>
+    </update>
+
+    <select id="findDictDataByDictValues" resultType="java.lang.Long">
+        select distinct id from sys_dict_data
+        <where>
+            dict_value in
+            <foreach collection="dictValues" index="index" item="dictValue" open="(" close=")" separator=",">
+                #{dictValue}
+            </foreach>
+        </where>
+    </select>
+
+    <select id="findDictDataByType" resultType="com.cnasoft.health.userservice.model.SysDictData">
+        select id, dict_name, dict_value
+        from sys_dict_data
+        where id in (select id from sys_dict_data where dict_type = #{dictType}) for update
+    </select>
+</mapper>

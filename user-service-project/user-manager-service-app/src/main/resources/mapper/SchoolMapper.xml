@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnasoft.health.userservice.mapper.SchoolMapper">
+
+    <select id="findList" resultType="com.cnasoft.health.userservice.model.School">
+        select s.id,s.name,s.area_code,IFNULL(a.approve_status,s.approve_status) as approve_status,
+        a.approve_remark as remark
+        from school s
+        left join (
+        select business_id,approve_status,approve_remark from approve where id in
+        (select substring_index(group_concat(id order by id desc),",",1) as id from approve
+        where approve_type = ${@com.cnasoft.health.common.enums.ApproveType@SCHOOL.code} group by business_id)
+        ) a on a.business_id = s.id
+        <where>
+            s.is_deleted = 0
+            <if test="param.areaCode != null">
+                and s.area_code = #{param.areaCode}
+            </if>
+            <if test="param.text != null">
+                and s.`name` like concat('%',#{param.text},'%')
+            </if>
+            <if test="param.approveStatus != null">
+                and a.approve_status = #{param.approveStatus}
+            </if>
+        </where>
+        order by s.id desc
+    </select>
+
+    <select id="getApproveAreaId" resultType="java.lang.Long">
+        SELECT DISTINCT sc.id
+        FROM school sc
+                 INNER JOIN approve on approve.approve_type = 4 and approve.business_id = sc.id
+                 LEFT JOIN sys_area p on p.type = 0 and substr(sc.area_code, 1, 2) = substr(p.code, 1, 2)
+                 LEFT JOIN sys_area c on c.type = 1 and substr(sc.area_code, 1, 4) = substr(c.code, 1, 4)
+                 LEFT JOIN sys_area d on d.type = 2 and sc.area_code = d.code
+        WHERE (sc.`name` like concat('%', #{keyword}, '%')
+            or d.`name` like concat('%', #{keyword}, '%')
+            or p.`name` like concat('%', #{keyword}, '%')
+            or c.`name` like concat('%', #{keyword}, '%'))
+    </select>
+    <select id="getIdByAreaCode" resultType="java.lang.Long">
+        select id
+        from school
+        where is_deleted = 0
+          and area_code = #{areaCode}
+    </select>
+    <select id="getSchoolStatistics" resultType="java.util.Map">
+        select a.month, SUM(b.total) total
+        from (select DATE_FORMAT(create_time, '%Y-%m') month, COUNT(*) sum
+              from school
+              where approve_status = 1 and is_deleted = 0
+              group by DATE_FORMAT(create_time, '%Y-%m')) a
+                 join
+             (select DATE_FORMAT(create_time, '%Y-%m') month, COUNT(*) total
+              from school
+              where approve_status = 1
+                and is_deleted = 0
+              group by DATE_FORMAT(create_time, '%Y-%m')) b
+             on a.month <![CDATA[ >= ]]> b.month
+        where a.month <![CDATA[ >= ]]> #{date}
+        group by a.month
+        order by a.month
+    </select>
+</mapper>

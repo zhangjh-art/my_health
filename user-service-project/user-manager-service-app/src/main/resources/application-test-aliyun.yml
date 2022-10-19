@@ -1,0 +1,92 @@
+spring:
+  datasource:
+    dynamic:
+      primary: user-service
+      strict: false
+      druid:
+        initial-size: 10
+        max-active: 20
+        min-idle: 10
+        max-wait: 2000
+      datasource:
+        user-service:
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://192.168.0.97:3306/health_user?useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true&allowMultiQueries=true&allowPublicKeyRetrieval=true
+          username: root
+          password: root
+  #        user-bar-service:
+  #          driver-class-name: com.mysql.cj.jdbc.Driver
+  #          url: jdbc:mysql://192.168.110.130:3306/user-bar-service?useSSL=false
+  #          username: cnasoft
+  #          password: IloveHealth
+  #        nebula:
+  #          driver-class-name: com.mysql.cj.jdbc.Driver
+  #          url: jdbc:mysql://118.117.45.202:3306/nebula?useSSL=false
+  #          username: sa
+  #          password: cnasoft110
+  # 分步式锁专用数据源
+  redis:
+    #    sentinel:
+    #      master: mymaster
+    #      nodes: 192.168.110.130:26379,192.168.110.131:26380,192.168.110.131:26381
+    host: 192.168.0.97
+    port: 6379
+    database: 0
+    password: cnasoftware#health
+    timeout: 2000ms
+  #    redisson: # 分布式锁专用客户端
+  #      config: classpath:redisson.yaml
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.0.97:8848
+        namespace: 18a7bcc0-29d5-4858-b013-438f7b3a9ddb
+        ip: 192.168.0.97
+    stream:
+      rocketmq:
+        binder:
+          name-server: 39.103.224.70:9876
+          enable-msg-trace: false
+# 业务多数据源redis配置
+cnasoft:
+  redis:
+    usersentinel:
+      database: 1
+      password: cnasoftware#health
+      shutdown-timeout: 1000ms
+      socket-timeout: 2000ms
+      host: 192.168.0.97
+      port: 6379
+      #      sentinel:
+      #        master: mymaster
+      #        nodes: 192.168.110.130:26379,192.168.110.131:26380,192.168.110.131:26381
+      lettuce:
+        pool:
+          max-active: 100
+          min-idle: 20
+          max-idle: 100
+          max-wait: 2000ms
+  #    userbarsentinel:
+  #      database: 0
+  #      password: cnasoftware#health
+  #      shutdown-timeout: 1000ms
+  #      socket-timeout: 2000ms
+  #      sentinel:
+  #        master: mymaster
+  #        nodes: 192.168.110.130:26379,192.168.110.131:26380,192.168.110.131:26381
+  #      lettuce:
+  #        pool:
+  #          max-active: 100
+  #          min-idle: 20
+  #          max-idle: 100
+  #          max-wait: 2000ms
+user:
+  password:
+    key: s2MTjOFGZ8aibt81lHTXgnVKCAA6H5JxkbGEAm763jw=
+third:
+  resource-platform:
+    servername: server-pub-TBe1nnzgFw
+    server-password: HCdaWb9xsua9r7xp2lr2
+    url: http://www.tlong.xyz:8080
+    key: KQPM1T8VhmKgT90D
+    iv: qtTbJY5vEy6a6SoU

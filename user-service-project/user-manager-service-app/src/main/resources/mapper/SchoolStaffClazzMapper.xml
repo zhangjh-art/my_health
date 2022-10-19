@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnasoft.health.userservice.mapper.SchoolStaffClazzMapper">
+
+    <select id="headteacherList" resultType="com.cnasoft.health.userservice.model.SysUser">
+        select s.id, AES_DECRYPT(UNHEX(u.`name`), #{key}) as `name`, c.clazz_id
+        from school_staff_clazz c
+                 left join school_staff s on c.school_staff_id = s.id
+                 left join sys_user u on s.user_id = u.id
+        where c.is_deleted = 0
+    </select>
+</mapper>

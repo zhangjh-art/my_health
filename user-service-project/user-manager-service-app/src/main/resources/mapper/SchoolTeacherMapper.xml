@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnasoft.health.userservice.mapper.SchoolTeacherMapper">
+
+    <select id="findByIdAndSchoolId" resultType="com.cnasoft.health.userservice.model.SchoolTeacher">
+        select t.id,
+               t.user_id,
+               AES_DECRYPT(UNHEX(u.username), #{key}) as username,
+               t.title,
+               t.major,
+               t.specialty,
+               t.job_number,
+               t.department,
+               t.post,
+               t.is_accept_task,
+               t.certification_file,
+               AES_DECRYPT(UNHEX(u.name), #{key})     as name,
+               u.sex,
+               AES_DECRYPT(UNHEX(u.mobile), #{key})   as mobile,
+               u.email,
+               u.enabled
+        from school_teacher t
+                 inner join sys_user u on t.user_id = u.id
+        where t.is_deleted = 0
+          and u.is_deleted = 0
+          and t.id = #{id}
+          and t.school_id = #{schoolId}
+    </select>
+
+    <select id="selectBySchoolTeacher" resultType="com.cnasoft.health.userservice.model.SchoolTeacher">
+        select s.id,s.user_id,AES_DECRYPT(UNHEX(u.username), #{key}) username
+        from school_teacher s
+        inner join sys_user u on s.user_id = u.id
+        <where>
+            s.is_deleted = 0 and u.is_deleted = 0
+            and s.school_id = #{schoolId} and u.role_code = 'school_psycho_teacher'
+            <if test="usernames != null and usernames.size() > 0">
+                and AES_DECRYPT(UNHEX(u.username), #{key}) in
+                <foreach collection="usernames" close=")" item="username" open="(" separator=",">
+                    #{username}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="findList" resultType="com.cnasoft.health.userservice.model.SchoolTeacher">
+        select t.id,t.user_id,AES_DECRYPT(UNHEX(u.username), #{key}) as username,t.title,t.major,t.specialty,
+        t.post,t.job_number,t.department,t.is_accept_task,t.certification_file,
+        AES_DECRYPT(UNHEX(u.name), #{key}) as name,u.sex,
+        AES_DECRYPT(UNHEX(u.mobile), #{key}) as mobile,u.email,u.enabled
+        from school_teacher t
+        left join sys_user u on t.user_id = u.id
+        <where>
+            t.is_deleted = 0
+            <if test="p.number != null">
+                and (t.id = #{p.number}
+                or AES_DECRYPT(UNHEX(u.mobile), #{key}) like concat(#{p.number}, '%')
+                or t.job_number like concat('%', #{p.number}, '%'))
+            </if>
+            <if test="p.text != null and p.text != ''">
+                and LOCATE(#{p.text}, AES_DECRYPT(UNHEX(u.name), #{key})) > 0
+            </if>
+            <if test="p.enabled != null">
+                and u.enabled = #{p.enabled}
+            </if>
+            <if test="p.schoolId != null">
+                and t.school_id = #{p.schoolId}
+            </if>
+            order by t.id desc
+        </where>
+    </select>
+
+    <update id="setAcceptTaskForOtherTeacher">
+        update school_teacher
+        set is_accept_task = 0
+        where school_id = #{schoolId}
+          and id != #{id}
+    </update>
+
+    <select id="getAcceptTaskId" resultType="java.lang.Long">
+        select id
+        from school_teacher
+        where school_id = #{schoolId}
+          and is_accept_task = 1
+          and is_deleted = 0
+    </select>
+
+    <select id="findTaskHandlerIdBySchoolId" resultType="java.lang.Long">
+        select user_id
+        from school_teacher
+        where school_id = #{schoolId}
+          and is_accept_task = 1
+          and is_deleted = 0 limit 1
+    </select>
+
+    <select id="getSchoolPsychoTeacherSchoolId" resultType="java.lang.Long">
+        select school_id
+        from school_teacher
+        where user_id = #{userId}
+          and is_deleted = 0 limit 1
+    </select>
+
+    <select id="findByUserId" resultType="com.cnasoft.health.userservice.model.SchoolTeacher">
+        select t.id,
+               t.user_id,
+               AES_DECRYPT(UNHEX(u.username), #{key}) as username,
+               t.title,
+               t.major,
+               t.specialty,
+               t.job_number,
+               t.post,
+               t.department,
+               t.is_accept_task,
+               t.certification_file,
+               AES_DECRYPT(UNHEX(u.name), #{key})     as name,
+               u.nickname,
+               u.sex,
+               AES_DECRYPT(UNHEX(u.mobile), #{key})   as mobile,
+               u.email,
+               u.enabled,
+               u.head_img_url
+        from school_teacher t
+                 left join sys_user u on t.user_id = u.id
+        where t.is_deleted = 0
+          and t.user_id = #{userId}
+    </select>
+
+    <select id="selectDropDownList" resultType="java.util.Map">
+        select t.user_id as id, convert (AES_DECRYPT(UNHEX(u.name), #{key}) using utf8) as name,
+        rc.interval_num, rtc.start_time, rtc.end_time from school_teacher t
+        inner join sys_user u on u.id = t.user_id
+        inner join reservation_config rc on rc.user_id = t.user_id
+        left join reservation_time_config rtc on rtc.config_id = rc.id
+        <where>
+            t.is_deleted = 0 and t.school_id = #{schoolId} and rtc.start_time is not null
+            <if test="date == null">
+                and sysdate() <![CDATA[ < ]]> rc.expire_date
+            </if>
+            <if test="date != null">
+                and #{date} <![CDATA[ < ]]> rc.expire_date
+            </if>
+            <if test="startTime != '' and endTime != ''">
+                and rtc.start_time = #{startTime} and rtc.end_time = #{endTime}
+            </if>
+            <if test="weekDay != null">
+                and rtc.week_day = #{weekDay}
+            </if>
+        </where>
+    </select>
+
+    <select id="findSchoolTeacherInfo" resultType="com.cnasoft.health.common.dto.SchoolTeacherDTO">
+        select st.user_id        as userId,
+               st.school_id      as schoolId,
+               st.job_number     as jobNumber,
+               st.department     as department,
+               sdd.dict_name     as departmentName,
+               st.is_accept_task as isAcceptTask
+        from school_teacher st
+                 left join sys_dict_data sdd on sdd.dict_value = st.department
+        where st.is_deleted = 0
+          and st.user_id = #{userId}
+    </select>
+
+    <select id="getSchoolPsychoTeacher" resultType="com.cnasoft.health.common.dto.CommonDTO">
+        select t.user_id as id, AES_DECRYPT(UNHEX(u.name), #{key}) as name
+        from school_teacher t
+                 left join sys_user u on u.id = t.user_id
+        where t.school_id = #{schoolId}
+          and t.is_deleted = 0
+    </select>
+
+    <update id="fullData">
+        update school_teacher set is_deleted = 0 where id = #{id}
+    </update>
+</mapper>

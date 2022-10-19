@@ -1,0 +1,135 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  application:
+    name: user-service
+  profiles:
+    active: local
+#  cloud:
+#    stream:
+#      rocketmq:
+#        binder:
+#          name-server: 182.151.18.126:9876
+#          enable-msg-trace: false
+#      bindings:
+#        input:
+#          destination: logs-topic
+#          content-type: application/json
+#          group: log-consumer-group
+  autoconfigure:
+    exclude:
+      - com.alibaba.druid.spring.boot.autoconfigure.DruidDataSourceAutoConfigure
+      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
+  #      - org.redisson.spring.starter.RedissonAutoConfiguration
+# 业务多数据源redis配置
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 100MB
+cnasoft:
+  #多租户配置
+  tenant:
+    enable: false
+    ignoreTables:
+      - sys_user
+      - sys_role_user
+      - sys_role_menu
+    ignoreSqls:
+      # 用户关联角色时，显示所有角色
+      - SysRoleMapper.findAll
+      # 用户列表显示用户所关联的所有角色
+      - SysRoleUserMapper.findRolesByUserIds
+server:
+  port: 8014
+  tomcat:
+    #最大连接等待数,默认100
+    accept-count: 1000
+    #最小工作线程数,默认10
+    min-spare-threads: 100
+    #最大工作线程数,默认200
+    max-threads: 1000
+    #请求体最大大小,默认2MB
+    max-swallow-size: -1
+dist:
+  lock:
+    api: enabled
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/*Mapper.xml
+  #实体扫描，多个package用逗号或者分号分隔
+  typeAliasesPackage: com.cnasoft.health.userservice.model
+  global-config:
+    db-config:
+      id-type: auto
+    banner: false
+  auto-fill:
+    enabled: true
+  configuration:
+    # 打印执行的SQL语句及返回的数据,只能打印到控制台
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+logging:
+  level:
+    com:
+      cnasoft:
+        health:
+          userservice: debug
+##feign参数优化
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 300000
+        readTimeout: 300000
+        loggerLevel: full  ## 配合logging.level=trace debug用于开发调式日志
+  compression:
+    request:
+      enabled: true
+      mine-types: text/xml,application/xml,application/json
+      min-request-size: 2048
+    response:
+      enabled: true
+  httpclient:
+    enabled: true
+management:
+  server:
+    port: 8024
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+      base-path: /management
+  endpoint:
+    health:
+      show-details: always
+swagger:
+  enable: true
+  title: 用户服务
+  description: 提供登录认证、用户信息查询、用户管理、权限管理、区域管理等
+  version: 1.0.0
+  base-package: com.cnasoft.health.userservice.controller
+  group-name: api-user
+sms:
+  send_limit: 10000
+  enable: true
+  siteId: xxxxxx
+  md5Key: xxxxx
+  smsUrl: http://sms.cnasoft.com/xxxxx/xxxxxx.htm
+#域账号登录回调地址
+domainaccount:
+  login:
+    signincallback: https://manage.cnasoft.cn/user/signinCallback
+
+task-executor:
+  corePoolSize: 5
+  maxPoolSize: 200
+  queueCapacity: 1000
+  threadNamePrefix: UserServerTaskExecutor-
+
+#资源平台对接测试地址
+third:
+  resource-platform:
+    servername: server-pub-TBe1nnzgFw
+    server-password: HCdaWb9xsua9r7xp2lr2
+    url: http://www.tlong.xyz:8080
+    key: KQPM1T8VhmKgT90D
+    iv: qtTbJY5vEy6a6SoU

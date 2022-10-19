@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnasoft.health.userservice.mapper.ReservationTimeConfigMapper">
+
+    <delete id="deleteByConfigId">
+        delete from reservation_time_config where config_id = #{configId}
+    </delete>
+
+    <select id="getAvailableTimeByDate" resultType="java.util.Map">
+        select t.user_id, rtc.start_time, rtc.end_time, rtc.config_id, rtc.week_day,rc.interval_num
+        from reservation_config rc
+        inner join sys_user su on su.id = rc.user_id
+        <if test="areaCode != null">
+            inner join area_teacher t on t.user_id = su.id
+        </if>
+        <if test="schoolId != null">
+            inner join school_teacher t on t.user_id = su.id
+        </if>
+        left join reservation_time_config rtc on rtc.config_id = rc.id
+        <where>
+            su.is_deleted = 0 and #{date} <![CDATA[ < ]]> rc.expire_date
+            and rtc.week_day = #{weekDay}
+            <if test="areaCode != null">
+                and t.area_code = #{areaCode}
+            </if>
+            <if test="schoolId != null">
+                and t.school_id = #{schoolId}
+            </if>
+        </where>
+    </select>
+</mapper>

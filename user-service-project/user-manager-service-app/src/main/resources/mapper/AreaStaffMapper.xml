@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnasoft.health.userservice.mapper.AreaStaffMapper">
+
+    <select id="getTaskUsers" parameterType="com.cnasoft.health.userservice.feign.dto.TaskUserReqVO"
+            resultType="com.cnasoft.health.userservice.feign.dto.TaskUserResVO">
+        SELECT user_id, job_number, department, post
+        FROM
+        area_staff
+        <if test="(query.name != null and query.name != '') || (query.mobile != null and query.mobile != '')">
+            left join sys_user u on area_staff.user_id = u.id
+        </if>
+        <where>
+            area_staff.area_code = #{query.areaCode} and area_staff.is_deleted = 0
+            <if test="query.name != null and query.name != ''">
+                and LOCATE(#{query.name}, AES_DECRYPT(UNHEX(u.name), #{key})) > 0
+            </if>
+            <if test="query.mobile != null and query.mobile != ''">
+                and LOCATE(#{query.mobile}, AES_DECRYPT(UNHEX(u.mobile), #{key})) > 0
+            </if>
+        </where>
+        UNION ALL
+        SELECT user_id, job_number, department, post
+        FROM
+        area_teacher
+        <if test="(query.name != null and query.name != '') || (query.mobile != null and query.mobile != '')">
+            left join sys_user u on area_teacher.user_id = u.id
+        </if>
+        <where>
+            area_teacher.area_code = #{query.areaCode} and area_teacher.is_deleted = 0
+            <if test="query.name != null and query.name != ''">
+                and LOCATE(#{query.name}, AES_DECRYPT(UNHEX(u.name), #{key})) > 0
+            </if>
+            <if test="query.mobile != null and query.mobile != ''">
+                and LOCATE(#{query.mobile}, AES_DECRYPT(UNHEX(u.mobile), #{key})) > 0
+            </if>
+        </where>
+        order by user_id desc
+    </select>
+
+    <select id="selectByAreaStaff" resultType="com.cnasoft.health.userservice.model.AreaStaff">
+        select s.id,s.user_id,AES_DECRYPT(UNHEX(u.username), #{key}) username
+        from area_staff s
+        inner join sys_user u on s.user_id = u.id
+        <where>
+            s.is_deleted = 0 and u.is_deleted = 0
+            and s.area_code = #{areaCode} and u.role_code = #{roleCode}
+            <if test="usernames != null and usernames.size() > 0">
+                and AES_DECRYPT(UNHEX(u.username), #{key}) in
+                <foreach collection="usernames" close=")" item="username" open="(" separator=",">
+                    #{username}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="selectAreaStaffByUserIds" resultType="com.cnasoft.health.userservice.feign.dto.AreaStaffReqVO">
+        select s.id, s.department, s.post, s.job_number, AES_DECRYPT(UNHEX(u.name), #{key}) name, u.sex, u.email,
+        AES_DECRYPT(UNHEX(u.mobile), #{key}) mobile
+        from area_staff s left join sys_user u on s.user_id = u.id
+        <where>
+            <if test="userIds != null and userIds.size() > 0">
+                user_id in
+                <foreach collection="userIds" close=")" item="item" open="(" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            and s.is_deleted = 0
+        </where>
+    </select>
+
+    <select id="findList" resultType="com.cnasoft.health.userservice.model.AreaStaff">
+        select s.id,s.user_id,AES_DECRYPT(UNHEX(u.username), #{key}) username,s.job_number,s.area_code,s.department,
+        s.post,s.type,AES_DECRYPT(UNHEX(u.name), #{key}) name,
+        u.sex,AES_DECRYPT(UNHEX(u.mobile), #{key}) mobile,u.email,u.enabled
+        from area_staff s
+        left join sys_user u on s.user_id = u.id
+        <where>
+            s.is_deleted = 0
+            <if test="p.number != null">
+                and (s.id = #{p.number} or AES_DECRYPT(UNHEX(u.mobile), #{key}) like concat(#{p.number}, '%'))
+            </if>
+            <if test="p.text != null and p.text != ''">
+                and AES_DECRYPT(UNHEX(u.name), #{key}) like concat('%',#{p.text},'%')
+            </if>
+            <if test="p.enabled != null">
+                and u.enabled = #{p.enabled}
+            </if>
+            <if test="p.areaCode != null">
+                and s.area_code = #{p.areaCode}
+            </if>
+            order by s.id desc
+        </where>
+    </select>
+
+    <select id="findByUserId" resultType="com.cnasoft.health.userservice.model.AreaStaff">
+        select s.id,s.user_id,AES_DECRYPT(UNHEX(u.username), #{key}) username,u.nickname,s.job_number,s.area_code,s.department,
+               s.post,s.type,AES_DECRYPT(UNHEX(u.name), #{key}) name,
+               u.sex,AES_DECRYPT(UNHEX(u.mobile), #{key}) mobile,u.email,u.enabled,u.head_img_url
+        from area_staff s
+        left join sys_user u on s.user_id = u.id
+        where s.is_deleted = 0 and s.user_id = #{userId}
+    </select>
+
+    <select id="areaTaskInScope" resultType="java.lang.Integer">
+        SELECT 1 FROM area_staff a LEFT JOIN sys_user u on a.user_id = u.id WHERE u.id=#{userId} AND u.area_code = #{areaCode} UNION ALL
+        SELECT 1 FROM area_teacher t LEFT JOIN sys_user u on t.user_id = u.id WHERE u.id=#{userId} AND u.area_code = #{areaCode}
+        limit 1
+    </select>
+    <select id="listMentalFile" resultType="com.cnasoft.health.userservice.feign.dto.StaffMentalFileVO">
+        select s.id,s.user_id,s.job_number,s.department,
+        s.post,AES_DECRYPT(UNHEX(u.name), #{key}) name,
+        u.sex,AES_DECRYPT(UNHEX(u.mobile), #{key}) mobile,
+        u.head_img_url
+        from area_staff s
+        left join sys_user u on s.user_id = u.id
+        where s.is_deleted = 0
+        <if test="param.areaCode != null and param.areaCode != ''">
+            and s.area_code = #{param.areaCode}
+        </if>
+        <if test="param.query != null and param.query != ''">
+            and AES_DECRYPT(UNHEX(u.name), #{key}) like concat('%',#{param.query}, '%')
+        </if>
+
+        UNION ALL
+
+        select s.id,s.user_id,s.job_number,s.department,
+        s.post,AES_DECRYPT(UNHEX(u.name), #{key}) name,
+        u.sex,AES_DECRYPT(UNHEX(u.mobile), #{key}) mobile,
+        u.head_img_url
+        from area_teacher s
+        left join sys_user u on s.user_id = u.id
+        where s.is_deleted = 0
+        <if test="param.areaCode != null and param.areaCode != ''">
+            and s.area_code = #{param.areaCode}
+        </if>
+        <if test="param.query != null and param.query != ''">
+            and AES_DECRYPT(UNHEX(u.name), #{key}) like concat('%',#{param.query}, '%')
+        </if>
+    </select>
+
+    <select id="getSelectList" resultType="java.util.Map">
+        select s.user_id id,convert (AES_DECRYPT(UNHEX(u.name), #{key}) using utf8) name
+        from area_staff s
+        inner join sys_user u on s.user_id = u.id
+        <where>
+            s.is_deleted = 0 and s.area_code = #{areaCode}
+            <if test="userName != null and userName != ''">
+                and AES_DECRYPT(UNHEX(u.name), #{key}) like concat('%',#{userName},'%')
+            </if>
+        </where>
+    </select>
+
+    <select id="findAreaStaffInfo" resultType="com.cnasoft.health.common.dto.AreaStaffDTO">
+        select t.user_id    as userId,
+               t.job_number as jobNumber,
+               t.department as department,
+               t.post       as post,
+               t.type       as type
+        from area_staff t
+        where t.user_id = #{userId}
+          and t.is_deleted = 0
+    </select>
+</mapper>

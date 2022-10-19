@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnasoft.health.userservice.mapper.SmsRecordMapper">
+    <sql id="Base_Column_List">
+        id,user_id,mobile,
+        content,used,expire_time,sms_type,
+        create_time,create_by,update_time,
+        update_by,is_deleted
+    </sql>
+    <select id="selectFirst" resultType="com.cnasoft.health.userservice.model.SmsRecord">
+        select <include refid="Base_Column_List"></include> from sms_record
+            where mobile = #{mobile} and content = #{content} and is_deleted = 0 order by id limit 1
+    </select>
+    <select id="selectLast" resultType="com.cnasoft.health.userservice.model.SmsRecord">
+        select <include refid="Base_Column_List"></include> from sms_record
+        where mobile = #{mobile} and user_id = #{userId} and is_deleted = 0 order by id desc limit 1
+    </select>
+</mapper>
