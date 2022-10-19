@@ -22,6 +22,7 @@ import javax.annotation.Resource;
  * @author cnasoft
  * @date 2020/6/30 19:09
  */
+//@Import通过快速导入的方式实现把实例加入spring的IOC容器中
 @Import({SecurityHandlerConfig.class, PasswordConfig.class})
 public class DefaultResourceServerConfig extends ResourceServerConfigurerAdapter {
 
@@ -68,7 +69,12 @@ public class DefaultResourceServerConfig extends ResourceServerConfigurerAdapter
 
     @Override
     public void configure(HttpSecurity http) throws Exception {
-        ExpressionUrlAuthorizationConfigurer<HttpSecurity>.AuthorizedUrl authorizedUrl = setHttp(http).authorizeRequests().antMatchers(securityProperties.getIgnore().getUrls()).permitAll().antMatchers(HttpMethod.OPTIONS).permitAll().anyRequest();
+        ExpressionUrlAuthorizationConfigurer<HttpSecurity>.AuthorizedUrl authorizedUrl =
+            setHttp(http).authorizeRequests()
+                .antMatchers(securityProperties.getIgnore().getUrls()).permitAll()
+                .antMatchers(HttpMethod.OPTIONS).permitAll()
+                .anyRequest();
+
         setAuthenticate(authorizedUrl);
 
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED).and().httpBasic().disable().headers().frameOptions().disable().and().csrf().disable();

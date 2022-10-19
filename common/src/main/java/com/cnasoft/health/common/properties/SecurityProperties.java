@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.stereotype.Component;
 
 /**
  * Spring Security 入口配置
@@ -13,6 +14,7 @@ import org.springframework.cloud.context.config.annotation.RefreshScope;
  */
 @Setter
 @Getter
+@Component
 @ConfigurationProperties(prefix = "cnasoft.security")
 @RefreshScope
 public class SecurityProperties {

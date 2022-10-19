@@ -15,9 +15,6 @@ import java.io.IOException;
 
 /**
  * Spring Security 安全处理器配置
- *
- * @author cnasoft
- * @date 2020/6/30 19:11
  */
 public class SecurityHandlerConfig {
 

@@ -2,7 +2,6 @@ package com.cnasoft.health.common.util;
 
 import com.cnasoft.health.common.exception.ServiceException;
 import com.cnasoft.health.common.exception.constant.GlobalErrorCodeConstants;
-import com.cnasoft.health.common.util.JsonUtils;
 import com.cnasoft.health.common.vo.CommonResult;
 import org.springframework.http.MediaType;
 

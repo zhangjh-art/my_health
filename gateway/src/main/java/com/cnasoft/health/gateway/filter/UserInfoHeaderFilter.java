@@ -3,7 +3,6 @@ package com.cnasoft.health.gateway.filter;
 import cn.hutool.core.collection.CollUtil;
 import com.cnasoft.health.common.constant.SecurityConstants;
 import com.cnasoft.health.common.dto.SysUserDTO;
-import com.cnasoft.health.gateway.service.impl.RequestDeDuplicator;
 import com.netflix.zuul.ZuulFilter;
 import com.netflix.zuul.context.RequestContext;
 import lombok.SneakyThrows;

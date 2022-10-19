@@ -39,6 +39,8 @@
         <security-jwt.version>1.1.0.RELEASE</security-jwt.version>
 
         <jedis.version>3.2.0</jedis.version>
+
+        <transmittable.version>2.11.4</transmittable.version>
     </properties>
 
     <dependencies>
@@ -110,6 +112,12 @@
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
             <optional>true</optional>
+        </dependency>
+        <!-- 父子线程通信 -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>transmittable-thread-local</artifactId>
+            <version>${transmittable.version}</version>
         </dependency>
     </dependencies>
 
