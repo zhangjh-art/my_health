@@ -1,0 +1,57 @@
+spring:
+  datasource:
+    dynamic:
+      primary: auth-service
+      strict: false
+      druid:
+        initial-size: 10
+        max-active: 20
+        min-idle: 10
+        max-wait: 2000
+      datasource:
+        auth-service:
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://localhost:3306/auth-service?useSSL=false&serverTimezone=Asia/Shanghai
+          username: root
+          password: 123456
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        namespace: 18a7bcc0-29d5-4858-b013-438f7b3a9ddb
+    stream:
+      rocketmq:
+        binder:
+          name-server: localhost:9876
+          enable-msg-trace: false
+  #分步式锁专用数据源
+  redis:
+    #    password: cnasoftware#health
+    #    sentinel:
+    #      master: mymaster
+    #      nodes: 192.168.110.130:26379,192.168.110.131:26380,192.168.110.131:26381
+    host: localhost
+    port: 6379
+    database: 0
+    timeout: 2000ms
+cnasoft:
+  redis:
+    auth-token-sentinel:
+      database: 0
+      #password: cnasoftware#health
+      shutdown-timeout: 1000ms
+      socket-timeout: 2000ms
+      host: localhost
+      port: 6379
+#      sentinel:
+#        master: mymaster
+#        nodes: 192.168.110.130:26379,192.168.110.131:26380,192.168.110.131:26381
+      lettuce:
+        pool:
+          max-active: 100
+          min-idle: 20
+          max-idle: 100
+          max-wait: 2000ms
+# RocketMQMessageListener 的消费地址是这样单独配置的
+rocketmq:
+  name-server: localhost:9876

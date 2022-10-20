@@ -44,6 +44,8 @@
         <transmittable.version>2.11.4</transmittable.version>
 
         <mybatis-plus-boot-starter.version>3.3.1</mybatis-plus-boot-starter.version>
+
+        <db.version>1.0</db.version>
     </properties>
 
     <dependencies>
@@ -127,6 +129,12 @@
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus</artifactId>
             <version>${mybatis-plus-boot-starter.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.cnasoft</groupId>
+            <artifactId>db-spring-boot-starter</artifactId>
+            <version>${db.version}</version>
         </dependency>
     </dependencies>
 
