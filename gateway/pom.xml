@@ -6,7 +6,6 @@
 
     <groupId>com.mysoftware</groupId>
     <artifactId>gateway</artifactId>
-    <version>4.0.0</version>
 
     <parent>
         <groupId>com.mysoftware</groupId>
