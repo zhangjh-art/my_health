@@ -18,6 +18,14 @@
         </dependency>
 
         <dependency>
+            <groupId>com.cnasoft</groupId>
+            <artifactId>user-service-project</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>D:/Program Files/apache-maven-3.5.4/repository/com/cnasoft/user-manager-service-api/1.0/user-manager-service-api-1.0.jar</systemPath>
+        </dependency>
+
+        <dependency>
             <groupId>org.springframework.security.oauth</groupId>
             <artifactId>spring-security-oauth2</artifactId>
         </dependency>
