@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class BloomFilter {
 
-    @Resource(name = "auth-token-sentinel-string-redis-template")
+    @Resource
     private StringRedisTemplate stringRedisTemplate;
 
     @Resource

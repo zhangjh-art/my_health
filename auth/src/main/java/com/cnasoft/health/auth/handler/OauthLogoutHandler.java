@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.cnasoft.health.common.util.AuthUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.common.OAuth2RefreshToken;
@@ -20,12 +21,12 @@ import javax.servlet.http.HttpServletResponse;
  */
 @Slf4j
 public class OauthLogoutHandler implements LogoutHandler {
-    @Autowired
-    private TokenStore tokenStore;
+    /*@Autowired
+    private TokenStore tokenStore;*/
 
     @Override
     public void logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
-        Assert.notNull(tokenStore, "tokenStore must be set");
+        /*Assert.notNull(tokenStore, "tokenStore must be set");
         String token = request.getParameter("token");
         if (StrUtil.isEmpty(token)) {
             token = AuthUtil.extractToken(request);
@@ -42,7 +43,7 @@ public class OauthLogoutHandler implements LogoutHandler {
                 log.info("remove existingAccessToken!", existingAccessToken);
                 tokenStore.removeAccessToken(existingAccessToken);
             }
-        }
+        }*/
     }
 }
 

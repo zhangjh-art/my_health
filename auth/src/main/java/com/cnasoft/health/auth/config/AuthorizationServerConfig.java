@@ -40,7 +40,7 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
     @Resource
     private UserDetailsService userDetailsService;
 
-    @Autowired
+    //@Autowired
     private TokenStore tokenStore;
 
     @Autowired(required = false)
